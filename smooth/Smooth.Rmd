@@ -1,0 +1,45 @@
+---
+title: "Smooth"
+author: "Graham Swain"
+date: "1/11/2022"
+output: html_document
+---
+
+## Loading Tidyverse Library
+```{r setup, message=FALSE}
+library(tidyverse)
+```
+
+## Looking at geom_smooth in ggplot
+Section 3.6 of our online textbook 
+<https://r4ds.had.co.nz/data-visualisation.html#geometric-objects>.
+Previously we played with `ggplot(data = mpg) + geom_point()`.
+
+```{r}
+attach(mpg)
+ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
+Let's try adding a scatter plot to this graph. But those come from `geom_point`.
+Have multiple geoms in one `ggplot`.
+
+```{r}
+ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy)) +
+  geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+Let's change method from default of "loesss" to "lm".
+```{r}
+ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy), method = "lm") +
+  geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+With smooth, we can adjust line styles, which wasn't appropriate for our point option.
+```{r}
+ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv)) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv))
+```

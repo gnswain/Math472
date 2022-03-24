@@ -1,0 +1,48 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Importing from CSV and Excel files
+
+Import the wages.csv file from Canvas.  Convert all values to the appropriate numeric values, then determine the rate at which the individual was paid each month (money/hour).
+
+```{r}
+library(tidyverse)
+library(readr)
+wages2 <- read_csv("./wages2.csv", 
+    col_types = cols(salary = col_character(), 
+        rate = col_character()))
+
+wages <- (wages2 %>% 
+            mutate(salary = parse_number(salary, locale = locale(decimal_mark = ",")),
+                   rate = parse_number(rate, locale = locale(decimal_mark = ",")),
+                   hours = salary / rate))
+wages # monthly is presuming 40 hours a week 4 weeks a month
+```
+
+
+# A little review since it's been a couple of weeks.
+
+Go to the [Olympic Medals Count](https://en.wikipedia.org/wiki/2022_Winter_Olympics_medal_table) and see if you can scrape the medals table from this page using R.  Note, this already has tables.  You don't need to go searching through the HTML to determine what nodes you want to collect.  Don't forget to include any needed libraries.
+
+Once you have the needed data in a tibble, 
+1) rename the variable that holds the contry name by using a command like:
+    `names(your_tibble_name)[[2]] <- "Country"
+2) make a scatter plot of the number of golds versus the number of silvers.  (You may have to filter your data first!)
+
+```{r}
+library(rvest)
+medals <- read_html("https://en.wikipedia.org/wiki/2022_Winter_Olympics_medal_table")
+
+tables <- medals %>% html_table(fill = TRUE)
+
+medals_tables <- tables[[3]]
+names(medals_tables)[[2]] <- "Country"
+medals_tables
+
+medals_tables %>% 
+  head(29) %>%
+  ggplot() +
+  geom_point(aes(x = Silver, y = Gold, color = Country))
+```

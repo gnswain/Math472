@@ -1,0 +1,207 @@
+---
+title: "2022-02-15 Math 472.572 Wrangling Part 1"
+author: "Erin McNelis"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+#  Some New Discussion About Tibbles
+
+Dr. McNelis has often referred to our data stored in tibbles as data
+frames (`data.frame`).  The data frame is the earlier object used for storing
+tables of data.  A tibble is a data frame, but it has been tweaked some to
+improver performance and use.
+
+We will typically import data from other sources (text files, spreadsheets, web pages, etc.) and give them a name in R.  The importing can import the
+data as a tibble or as a data frame.  We'll focus on the `readr` library
+later, which will typically output data as tibbles, but we can specify
+tibbles (or data frames) by typing these in at a command line or in a
+script file.
+
+Consider putting the following in a data file and in a tibble, separately.
+Let's suppose we want to make a set of three ficticious characters and list
+their initials, their date of birth, their number of siblings, and their
+high school GPA.  Consider randomly generating these values, such as using
+
+`ints<-paste(sample(letters[1:24],4,replace=TRUE),sample(letters[1:24],4,replace=TRUE),sample(letters[1:24],4,replace=TRUE),sep="" )`
+and
+`bdays <- sample(seq(as.Date('1999/01/01'), as.Date('2015/01/01'), by="day"), 4)`
+Think about what these may mean.
+
+```{r}
+inits <- paste(sample(letters[1:24], 4, replace= TRUE),
+               sample(letters[1:24], 4, replace= TRUE),
+               sample(letters[1:24], 4, replace= TRUE), 
+               sep = "")
+inits
+
+bdays <- sample(seq(as.Date('1999/01/01'), as.Date('2015/01/01'), by = "day"), 4)
+bdays
+
+sibs <- sample(0:9, 4, replace = TRUE)
+sibs
+
+gpas <- sample(seq(0, 5, .01), 4, replace = TRUE)
+gpas
+
+gpasn <- sample(rnorm(4, mean = 3.14, sd = 1), replace = TRUE)
+gpasn
+
+df <- data.frame(inits = inits, bdays = bdays, sibs = sibs, gpas = gpas)
+df
+
+tb <- tibble(inits = inits, bdays = bdays, sibs = sibs, gpas = gpas)
+tb
+```
+
+Investigate these by typing their names, and/or using the `str()` function.
+
+```{r}
+str(df)
+str(tb)
+head(df, 2)
+head(tb, 2)
+print(df, n = 2)
+print(tb, n = 2)
+```
+
+## Viewing Values in a Tibble
+
+We can see a column of value, i.e. a variable's values using $ or [] or [[]].
+
+```{r}
+# View the GPA's of each: df, tb
+
+df$gpas
+tb$gpas
+tb[["inits"]] # specify name of variable
+tb[[1]] # specify column of variable
+tb[1] # outps as a tibble rather than a vector
+tb[,1] # getting the first column
+tb[1,] # getting the first row
+```
+
+
+## Converting Data Frames to Tibbles
+
+```{r}
+new_tb <- as_tibble(df)
+new_tb
+```
+
+
+## Referring to Specific Values in a Tibble (by Variable or Entry)
+
+
+### Using Pipes
+
+```{r}
+tb2 <- tibble(x = 2:6, y = sin(x), z = 32)
+tb2
+
+tb2 %>% .$y
+tb2 %>% .[["x"]]
+```
+
+# Parsing
+
+Sometimes the way your data is written may not be the way you want it...
+
+```{r}
+salary <- "14.389,72" # some countries use "." as a separator/grouping and "," as decimal indicator
+
+# Want to read this as a decimal number
+parse_number(salary, locale = locale(decimal_mark = ","))
+
+# parse_number ignores all characters
+fake_sal <- parse_number("I make $27,846,319.52 each year.")
+fake_sal
+
+fake_sal%%1
+
+# Note, to see the value of fake_sal without potential limits of displaying values to the command line,
+# check out the Environment tab to read the value stored in fake_sal
+
+# Change encoding read
+sentence <- "El Ni\xf1o is a weather pattern."
+parse_character(sentence, locale = locale(encoding = "Latin1"))
+
+parse_double(c("245,67", "-32,675", "182,918"), locale = locale(decimal_mark = ","))
+```
+
+```{r}
+library(readr)
+challenge <- read_csv("~/math472/class_week6/challenge.csv")
+View(challenge)
+tail(challenge, 4)
+```
+
+
+```{r}
+weather <- read_excel("~/math472/class_week6/WeatherData.xlsx")
+
+new_weather <- weather %>% mutate(temp = parse_number(Temperature), 
+                   dew = parse_number(weather[["Dew Point"]]))
+new_weather
+```
+
+# Web Scraping from Weather Service
+
+```{r}
+library(rvest)
+
+forecast <- read_html("https://forecast.weather.gov/MapClick.php?lat=35.372700000000066&lon=-83.22461999999996")
+forecast
+View(forecast)
+
+# pick off the nodes that have "temp"
+
+seven_day <- forecast %>% html_nodes(".temp") %>% html_text()
+seven_day
+```
+
+# Scraping Tables from Web Pages
+
+```{r}
+movies <- read_html("https://en.wikipedia.org/wiki/List_of_highest-grossing_films_in_the_United_States_and_Canada")
+movies
+
+tables <- movies %>% html_table(fill = TRUE)
+# don't display it
+# tables
+first_table <- tables[[1]]
+first_table
+
+table1 <- first_table[-1,-1]
+table1
+
+library(janitor)
+table1 <- table1 %>% clean_names()
+table1
+
+names(first_table)
+names(table1)
+View(table1)
+str(table1) # money values are strings
+
+table1 %>% 
+  mutate(lifetime_gross = parse_number(lifetime_gross)) %>% 
+  arrange(desc(lifetime_gross)) %>% 
+  head(20)
+
+table1 %>% 
+  mutate(lifetime_gross = parse_number(lifetime_gross)) %>%
+  arrange(desc(lifetime_gross)) %>% 
+  head(20) %>%
+  mutate(title = fct_reorder(title, lifetime_gross)) %>%
+  ggplot() + 
+  geom_bar(aes(x = lifetime_gross, y = title), stat = "identity", fill = "blue") +
+  labs(title = "Top 20 Grossing Movies in US and Canada", caption = "Data Source: Wikipedia")
+```
+
+

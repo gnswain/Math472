@@ -1,0 +1,73 @@
+---
+title: "Homework 1"
+author: "Graham Swain"
+date: "1/19/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, echo=FALSE, message=FALSE}
+library(tidyverse)
+bm = read.csv('bodymeas.csv')
+```
+
+Note: 'bodymeas.csv' must be in the same directory.
+
+## Problem 1
+### 1a) Plot 1
+```{r 1a}
+ggplot(data = bm) +
+  geom_point(mapping = aes(x = upperArmLength, y = ht, shape = gender, color = bmi))
+```
+
+### 1b) Plot 2
+```{r 1b}
+ggplot(data = bm) +
+  geom_point(mapping = aes(x = bmi, y = wt, color = gender, alpha = age)) +
+  facet_wrap(~ marital, nrow = 3)
+```
+
+### 1c) Plot 3
+```{r 1c, message=FALSE}
+ggplot(data = bm) +
+  geom_point(mapping = aes(x = bmi, y = wt, color = race)) +
+  geom_smooth(mapping = aes(x = bmi, y = wt)) +
+  facet_wrap(~ race, nrow = 3)
+```
+
+### 1d) Plot 4
+```{r 1d, message=FALSE}
+ggplot(data = bm) +
+  geom_bar(mapping = aes(x = marital, y = stat(prop), group = 1), fill = rainbow(6)) +
+  coord_flip()
+```
+
+### 1e) Plot 5
+```{r 1e, message=FALSE}
+ggplot(data = bm) +
+  geom_bar(mapping = aes(x = race, fill = marital)) +
+  coord_flip()
+```
+
+### 1f) Plot 6
+```{r 1f, message=FALSE}
+ggplot(data = bm) +
+  geom_boxplot(mapping = aes(x = race, y = bmi, fill = race)) +
+  guides(fill = "none") +
+  coord_flip()
+```
+
+## Problem 2
+It toggles the confidence level around the plot.  
+With `se = TRUE`:  
+```{r, echo=FALSE, message=FALSE}
+ggplot(data = bm)  +
+  geom_smooth(mapping = aes(x = bmi, y = wt)) 
+```
+
+With `se = FALSE`:  
+```{r, echo=FALSE, message=FALSE}
+ggplot(data = bm)  +
+  geom_smooth(mapping = aes(x = bmi, y = wt), se = FALSE) 
+```

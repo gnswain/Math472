@@ -1,0 +1,174 @@
+---
+title: "Homework 4: Wrangling Data"
+author: "Graham Swain"
+date: "Due by Thursday, 11:59 p.m. March 17, 2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Part One: Working with Gapminder data
+
+For this part of the homework, you'll need to import data from a .csv file and adjust it to be "tidy", then use it to create a graph.
+
+1.  (1 pt) Go to Canvas and download the "girls_out_of_school.csv" file and read this into R as a tibble using `readr()`.
+
+```{r}
+library(tidyverse)
+library(readr)
+girls_out_of_school <- read_csv("girls_out_of_school.csv")
+head(girls_out_of_school)
+```
+
+2.  (4 pts) When we think of this data, there should be three variables: country, year, and out_of_school.  You are to transform your data so these are the three variables.  Now is your time to drop any observations for which you do not have a count of the number of girls out of school.
+
+```{r}
+girls <- (girls_out_of_school %>%
+            pivot_longer(cols = c('1969':'2019'), 
+                         names_to = 'year', 
+                         values_to = 'out_of_school', 
+                         values_drop_na = TRUE))
+girls
+```
+
+3.  Recall that, unless specified otherwise, the function you used to make this transformation gave us variables that are considered as character strings.
+
+  a)  (4 pts) First, if you did not make sure that the values of year were treated as doubles in your transformation above, then you are to transform the "year" variable to be a number here.
+  
+```{r}
+girls <- girls %>% mutate(year = parse_number(year))
+girls
+```
+  
+
+ b)  (5 pts) Next, you need to convert the "out_of_school" variable values to doubles, but there is a catch!  Some of these values that are over 1,000 have been expressed as 23.4k, meaning, 23,400.  We even have values in the millions expressed as 2.4M which is 2,400,000.  You must determine a way to make sure that you end up with the correct numeric value for each entry!!  Note, it may help to check out help on the function `str_ends()`.
+ 
+```{r}
+girls$out_of_school <- ifelse(str_ends(girls$out_of_school,"M"), 
+                              parse_number(girls$out_of_school) * 1000000,
+                              ifelse(str_ends(girls$out_of_school,"k"), 
+                                     parse_number(girls$out_of_school) * 1000, 
+                                     parse_number(girls$out_of_school)))
+```
+
+4.  Now that you have tidy data, use it to do the following:
+
+  a) (3 pts) Determine the largest number of girls out of school for every year and the smallest number of girls out of school for every year.
+  
+```{r}
+per_year <- (girls %>%
+               group_by(year) %>%
+               summarize(max_amt_out = max(out_of_school), min_amount_out = min(out_of_school)))
+per_year
+```
+
+  b) (3 pts) Now make a scatter plot of those (year, max_amt_out) and (year, min_amount_out) values.  Add a meaningful title to your plot.  In order to make the plot easier to read (because of the vast difference in scale of the values), please add "+ scale_y_log10()" to your commands to use a logarithmic scale on your vertical axis.
+  
+```{r}
+per_year %>%
+  ggplot() +
+  geom_point(aes(x = year, y = max_amt_out)) +
+  scale_y_log10() +
+  labs(y = "Girls out of school", title = "Maximum amout of girls out of school per year")
+
+per_year %>%
+  ggplot() +
+  geom_point(aes(x = year, y = min_amount_out)) +
+  scale_y_log10() +
+  labs(y = "Girls out of school", title = "Minimum amout of girls out of school per year")
+```
+
+# Part Two: Working with Scraped Data
+
+For this part of the homework you'll start by scraping the following Wiki page about Marvel Movies <https://en.wikipedia.org/wiki/List_of_Marvel_Cinematic_Universe_films>.  We're going to work with the table of data that lists the Box Office Performance.  This should be the sixth table from the page.  
+
+1)  (1 pt) Scrape this web page and save the box office data in a tibble called `box_office`, and end this question by viewing this tibble.
+
+```{r}
+library(rvest)
+box_office <- read_html("https://en.wikipedia.org/wiki/List_of_Marvel_Cinematic_Universe_films") %>%
+                html_table(fill = TRUE)
+box_office <- box_office[[6]]
+box_office
+```
+
+If you were to try applying any functions to `box_office` you'll likely run into problems like the following:
+```{r}
+filter(box_office, row_number()>2)
+# Error: Can't transform a data frame with duplicate names.
+# Run `rlang::last_error()` to see where the error occurred.
+```
+
+2)  (3 pts) Perform the following operations and then, in comments or in the space below, EXPLAIN what these commands are doing and why we want to do that.
+```{r}
+names(box_office) <- c('film','US_release','US_gross','other_gross', 'world_gross','US_rank', 'world_rank', 'budget','ref')
+# this changes the names of the variables to make them easier to work with
+# the biggest change is removing white spaces
+
+box_office <- box_office %>% filter(!str_detect(film,"Phase"), row_number()>2, film != "Total")
+# this one is removing the first two rows that don't hold any info. Just some remnants left over
+# from the Wikipedia formatting.
+
+box_office$phase <- factor(c(rep("One",6),rep("Two",6), rep("Three",11),rep("Four",4)),levels = c("One", "Two", "Three", "Four"), ordered = TRUE)
+# this creates a new variable called phase and assigns each movie to a phase
+```
+
+3)  (5 pts) You are to delete the variables `world_gross` and `ref` from the tibble, and then convert `US_gross`, `other_gross`, and `budget` to numbers (make them ALL with units of millions, i.e. you will need to go further by doing some division on the `US_gross` and `other_gross`).  Also use the `"%B %d,%Y"` format to convert the `US_release` variable to a date format.  
+
+```{r}
+box_office <- (box_office %>%
+                 select(-c(world_gross, ref)))
+
+box_office <- (box_office %>% mutate(US_gross = (parse_number(US_gross) / 1000000),
+                                     other_gross = (parse_number(other_gross) / 1000000),
+                                     budget = parse_number(budget)))
+
+
+box_office <- box_office %>% mutate(US_release = parse_date(US_release, format = "%B %d, %Y"))
+```
+
+
+4)  Now finish out with the following:
+    a) (2 pts) Make a scatter plot of `US_gross` versus `other_gross` to see if the US reception of these movies appears to have a relationship with that of the rest of the world.  Color the values based on their Phase in the Marvel Cinema Universe.  
+    Consider using the `scales` library and `scale_x_continuous(labels=dollar_format(prefix="$",suffix=" m"))` and `scale_y_continuous(labels=dollar_format(prefix="$",suffix=" m"))` as well as new labels with `xlab()` and `ylab()` to make the axes nicer.
+    
+```{r}
+box_office %>%
+  ggplot() +
+  geom_point(aes(x = US_gross, y = other_gross, color = phase)) +
+  xlab("US Gross") +
+  ylab("Other Gross") +
+  scale_x_continuous(labels = scales::dollar_format(prefix = "$", suffix = " m")) +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = " m"))
+
+```
+    
+    b) (2 pts) Make a plot of the `US_gross` over time, using the `US_release` on your horizontal axis.  Color the plot by the budget of the movie.
+    
+```{r}
+
+box_office %>%
+  ggplot() +
+  geom_point(aes(x = US_release, y = US_gross, color = budget)) +
+  xlab("US Release") +
+  ylab("US Gross") +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = " m"))
+
+```
+  5)  (2 pts) Lastly, what was the average gross sales per movie in the US for each Phase?  (In other words, what was the average gross in Phase One?  In Phase Two? etc.).  
+  
+```{r}
+box_office %>% 
+  group_by(phase) %>%
+  summarize(average = mean(US_gross))
+
+```
+
+Phase One:   $291.23m
+Phase Two:   $308.01m
+Phase Three: $450.13m
+Phase Four:  $341.34m
+  
+  

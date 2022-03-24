@@ -1,0 +1,161 @@
+---
+title: "2022-03-15 Math472"
+author: "Graham Swain"
+date: "3/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Programming in R
+
+Why might we be interested in functions in R?
+ - If we end up doing something repeatedly, especially if it is a multi step process
+ - It can make reading out work clearer by naming functions in a descriptive way
+ 
+Some basic function writing in R:
+
+Syntax:
+function_name <- function(input(s)) {
+  <space in two steps> code here
+}
+
+EXAMPLE: Suppose that x is a vector of numeric values, and you want to "normalize it", i.e. make the largest value (in absolute value) = 1 by dividing by the absolute value of the largest term.
+
+Ex: x = 4, -10, 8, 3
+  largest abs value in x | -10 | = 10
+  normalized x = 4/10, -10/10, 8/10, 3/10
+  
+```{r, normalize}
+normalize_vec <- function(x) {
+  # find the largest element in absolute size
+  largest_element <- max(abs(x))
+  
+  # divide my elements in x by this
+  x / largest_element
+}
+
+# Let's test our function
+x <- c(8, 3, -10, 7, 0, -5)
+normalize_vec(x)
+```
+
+Suppose you want to return multiple things, like the min and max value from a vector.
+```{r}
+min_and_max <- function(myvec) {
+  mymin <- min(myvec, na.rm = TRUE)
+  mymax <- max(myvec, na.rm = TRUE)
+  c(mymin, mymax)
+}
+
+bob = c(13, -7, 8, -42, NA, 0)
+min_and_max(bob)
+```
+
+Textbook asks we consider naming these and making functions
+```{r}
+mean(is.na(x))
+
+mean(is.na(bob)) # proportion of NA's in vector
+
+sum(is.na(bob))
+
+count_na <- function(x) {
+  sum(is.na(x))
+}
+
+proportion_na <- function(x) {
+  mean(is.na(x))
+}
+
+count_na(c(NA, NA, NA, NA, NA, "Banana"))
+
+proportion_na(c("Banana", "Orange", NA, NA))
+```
+```{r}
+myvar <- function(x) {
+  x <- na.omit(x)
+  sum(((x - mean(x)) ^ 2)) / (length(x) - 1)
+}
+
+myskew <- function(x) {
+  x <- na.omit(x)
+  (1 / (length(x) - 2)) * ((sum(x - mean(x)) ^ 3) / myvar(x) ^ (3 / 2))
+}
+
+minion <- c(3, 2, -4, 0, NA, 10, -5)
+
+myvar(minion)
+var(minion, na.rm = TRUE)
+myskew(minion)
+```
+
+## Boolean Logic and Statements
+
+It's important to remember, we will have a statement that requires a single true or a single false.
+
+If you've cleaned your room, you get a brownie, else you also get to clean the bathroom.
+```{r}
+# we can preform ANDs and ORs on logical vectors
+x <- sample(c(TRUE, FALSE), 8, replace = TRUE) # random vector of booleans, length 8
+y <- sample(c(TRUE, FALSE), 8, replace = TRUE)
+
+# consider x and y
+# returns a vector
+x & y
+
+# returns a single value
+x && y
+
+x | y    # vector
+x || y   # single value
+```
+
+Syntax for IF statements (IF ELSE ...)
+
+if (boolean statement) {
+  <code>
+} else if (boolean statement) {
+  <code>
+} else {
+  <code>
+}
+
+
+Suppose you are to take in a single numerical value, that is a grade. You also take in a "flag" that tells if you use the +/- system. You assign the letter grade based on a 10 point system, and the upper and lower two points are the +/- range.
+
+```{r}
+grade_me <- function(grade, pm) {
+  letter = ''
+  plus_min = 0
+  if (grade >= 90) {
+    letter = 'A'
+    plus_min = grade - 90
+  } else if (grade >= 80) {
+    letter = 'B'
+    plus_min = grade - 80
+  } else if (grade >= 70) {
+    letter = 'C'
+    plus_min = grade - 70
+  } else if (grade >= 60) {
+    letter = 'D'
+    plus_min = grade - 60
+  } else {
+    letter = 'F'
+    plus_min = grade
+  }
+  
+  if (pm) {
+    if (plus_min >= 8) {
+      letter = letter + '+'
+    } else if (plus_min <= 2) {
+      letter = letter + '-'
+    }
+  }
+}
+```
+
+
+

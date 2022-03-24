@@ -1,0 +1,189 @@
+---
+title: "Test 1"
+author: "Graham Swain"
+date: "3/21/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(fivethirtyeight)
+```
+
+# FiveThirtyEight.com and R
+
+### 1) [0 points] Check out the help on the drinks dataset from the fivethirtyeight package.
+
+```{r 1-1}
+?drinks
+```
+
+### 2) [4 points] You are to delete the ‘total litres of pure alcohol‘ variable from the data set and rename the ‘beer servings‘, ‘spirit servings‘, and ‘wine servings‘ to be ‘beer‘, ‘spirit‘, and ‘wine‘. Save the resulting data set.
+
+```{r 1-2}
+table1 <- drinks %>% select(-total_litres_of_pure_alcohol)
+names(table1) <- c('country', 'beer', 'spirit', 'wine')
+table1
+```
+
+### 3) [4 points] To fit with the “tidy” data format, you are to adjust this data set so its variables are ‘country‘, ‘alcohol type‘, ‘servings‘.
+
+```{r 1-3}
+table2 <- (table1 %>%
+             pivot_longer(cols = c("beer", "spirit", "wine"), 
+                          names_to = "alcohol_type",
+                          values_to = "servings"))
+table2
+```
+
+
+### 4) [5 points] Use your tidy data to determine the mean, median, and standard deviation of the number of servings for each type of alcohol.
+
+```{r 1-4}
+table3 <- (table2 %>% 
+             group_by(alcohol_type) %>%
+             summarize(average = mean(servings), 
+                       median = median(servings), 
+                       standard_deviation = sd(servings)))
+table3
+```
+
+### 5) Use your tidy data to recreate the following images, being careful to give all of the code necessary to generate the image.
+#### a) [6 points] Take careful notice of the labels on your horizontal and vertical axes here!
+```{r 1-5a}
+ggplot(table2) +
+  geom_boxplot(aes(x = alcohol_type, y = servings, fill = alcohol_type), 
+               show.legend = FALSE) +
+  xlab("Type of Alcohol") +
+  ylab("Number of Servings")
+```
+
+#### b) [6 points] Hint, look at the difference between ‘geom bar()‘ and ‘geom col‘. Also consider the position option.
+
+```{r 1-5b}
+table5b <- table2 %>% filter(country == "Italy" | 
+                             country == "Japan" |
+                             country == "Qatar" |
+                             country == "USA" )
+ggplot(table5b) +
+  geom_col(aes(x = country, y = servings, fill = alcohol_type), position = "dodge")
+```
+
+# Scraping imdb.com
+
+### 1) [0 points] Go to https://www.imdb.com/chart/top/?ref_=nv_mv_250 and take a look at what you’ll be scraping: The top 250 movies as ranked by imdb.com. It may be helpful to look at the page source for this page. To do this using Google Chrome or Firefox, put your cursor somewhere on the webpage and right-click. Then choose the View Page Source option. If you are using Safari, you will first need to go to the Safari Menu (next to the apple on the top of your screen) and select Preferences. Go to the Advanced tab on the far right. At the bottom of this menu option, select ”Show Develop menu in menu bar.” Then you can go to the Develop menu and select Show Page Source. You can search for “Shawshank” or go to line 937 to see more on the parts of the html code that we’ll want to scrape.
+
+### 2) [2 points] Use the appropriate R function to read the html from this web page into an object called ‘top250‘.
+```{r 2-2}
+library(rvest)
+top250 <- read_html("https://www.imdb.com/chart/top/?ref_=nv_mv_250")
+```
+
+
+### 3) [5 points] Run the following R code and explain what it is doing, based on what you saw in the page source. Be very thorough in your answer. Explain the meaning of each line of R code.
+
+```{r 2-3}
+# this is pulling the names of the top 250 movies from the html
+top250names <- top250 %>% 
+                 html_elements("td.titleColumn") %>% 
+                 html_elements("a") %>% 
+                 html_text()
+
+# this is pulling the release year of the top 250 movies from the html
+top250years <- top250 %>% 
+                 html_elements("td.titleColumn") %>% 
+                 html_elements(".secondaryInfo") %>% 
+                 html_text()
+
+# this is pulling the rating of the top 250 movies from the html
+top250ratings <- top250 %>% 
+                   html_elements("td.ratingColumn.imdbRating") %>% 
+                   html_elements("strong") %>% 
+                   html_text()
+```
+
+### 4) [4 points] Now create ‘top250rank‘ to be a vector of the numbers 1 through 250. Combine this vector along with the three vectors created in the problem above into a tibble called ‘top250data‘ with the  variables ‘rank‘, ‘movie‘, ‘year‘, and ‘rating‘. Make sure that the values of ‘year‘ and ‘rating‘ are seen as numbers.
+
+```{r 2-4}
+top250rank <- c(1:250)
+
+top250data <- tibble(rank = top250rank, 
+                     movie = top250names, 
+                     year = parse_number(top250years), 
+                     rating = parse_number(top250ratings))
+```
+
+### 5) Use this data to do/answering/recreate the following:
+
+#### a) [7 points] Generate a tibble that gives the number of top 250 movies and their average rating for each year in the ‘top250data‘. Have the list print out so that the years with the most top 250 movies are at the top, and they’re listed in decreasing average rating. Save this tibble as ‘top250byYear‘.
+
+```{r 2-5a}
+top250byYear <- (top250data %>%
+                   group_by(year) %>%
+                   summarise(amount = n(), average_rating = mean(rating)) %>%
+                   arrange(desc(amount), desc(average_rating)))
+top250byYear
+```
+
+#### b) [4 points] Determine how many of the top 250 movies were made before the year you were born.
+
+```{r 2-5b}
+nrow(top250data %>% filter(year < 1997))
+```
+
+#### c) [8 points] Make a line plot of the number of top 250 movies out in each year for the 20 years before your birth that overlays the scatter plot of these values (so the lines and the points). Have the color of the points be determined by the average rating of the top 250 movies released in that year. Note, you are free to decide if the 20 years before your birth includes the year of your birth or not.
+
+```{r 2-5c}
+twentyBefore <- (top250data %>% 
+                   filter(year < 1997, year >= (1997 - 20)) %>%
+                   group_by(year) %>%
+                   summarise(amount = n(), avg_rating = mean(rating)))
+# It would've made more sense to use top250byYear, but I forgot it existed. It comes out the same regardless.
+
+ggplot(twentyBefore) +
+  geom_smooth(aes(x = year, y = amount), se = FALSE) +
+  geom_point(aes(x = year, y = amount, color = avg_rating)) +
+  labs(title = "Movies from IMBD Top 250 released 20 years before my birth",
+       x = "Year",
+       y = "Amount of Releases")
+```
+
+# Lord of the Rings and Spoken Words
+
+### 1) [1 point] Import the data from lotr words.csv as a tibble named ‘lotr words‘.
+
+```{r 3-1}
+library(readr)
+lotr_words <- read_csv("./lotr_words.csv")
+```
+
+### 2) [5 points] Break the ‘Chapter‘ variable apart to form two new variables ‘ChNum‘ and ‘ChName‘, where ‘ChNum‘ is an integer and ‘ChName‘ is a character string containing the name of the Chapter.
+
+```{r 3-2}
+lotr_words <- (lotr_words %>% 
+                 separate(col = Chapter, into = c("ChNum", "ChName"), sep = ': '))
+lotr_words$ChNum <- parse_integer(lotr_words$ChNum)
+```
+
+### 3) [4 points] Create a tibble that gives the number of words spoken in each film by each race (note, an Ainur is a Wizard, for your information).
+
+```{r 3-3}
+wordsByRace <- (lotr_words %>%
+                  group_by(Film, Race) %>%
+                  summarise(num_words = sum(Words)))
+wordsByRace
+```
+
+### 4) [10 points] Recreate the graph given below. Note that the vertical axis is NOT linear but in a logarithmic scale.
+
+```{r 3-4}
+lotr_words %>%
+  filter(Race == "Ainur" | Race == "Elf" | Race == "Hobbit" | Race == "Men") %>%
+  ggplot() +
+  geom_point(aes(x = ChNum, y = Words, shape = Film, color = Race)) +
+  geom_smooth(aes(x = ChNum, y = Words, color = Race), se = FALSE) +
+  scale_y_log10() + 
+  facet_wrap(~Film, ncol = 2)
+```
+

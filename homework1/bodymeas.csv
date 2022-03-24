@@ -1,0 +1,259 @@
+id,age,gender,race,marital,wt,ht,bmi,upperLegLength,upperArmLength,armCircumf
+54255,36,Female,Non-Hipanic White,Divorced,132.3,165.3,48.42,37.3,37.5,45.3
+53035,77,Male,Non-Hipanic White,Widowed,83,170.9,28.42,38.5,39,32.3
+52083,20,Female,Mexican American,Never Married,103.9,181.1,31.68,42.5,40.8,35.7
+53456,28,Female,Non-Hipanic Black,Married,101.1,169.9,35.02,39.8,36.4,39.5
+59553,32,Female,Non-Hipanic White,Married,59.4,162.1,22.61,41,36.6,24.7
+58962,74,Male,Non-Hipanic White,Married,80.3,171.4,27.33,39.1,41.5,30.2
+60187,64,Male,Non-Hipanic Black,Divorced,98.7,173.3,32.86,42.9,39.6,34.1
+56120,72,Male,Non-Hipanic White,Married,66,149.9,29.37,33.3,31.7,32.8
+57483,54,Female,Mexican American,Living with partner,91.6,165.1,33.6,35.7,36.8,34.6
+57366,65,Female,Non-Hipanic White,Divorced,73,164.6,26.94,31.4,37.5,31.2
+57310,30,Male,Non-Hipanic Black,Living with partner,100.1,161,38.62,42,37.4,38.2
+57305,67,Female,Non-Hipanic White,Married,114.5,181.7,34.68,40.3,42.8,40.8
+57052,21,Male,Non-Hipanic White,Never Married,69.7,176.1,22.48,40,39,31.1
+52351,80,Female,Non-Hipanic White,Widowed,97,161.7,37.1,36.5,37.6,39.7
+52878,51,Female,Non-Hipanic White,Separated,66.8,157.9,26.79,34.7,32,30.7
+53735,20,Female,Mexican American,Living with partner,70.5,166.6,25.4,36.7,36.8,30
+58407,45,Male,Non-Hipanic White,Married,105.9,183.8,31.35,41.3,39.2,36.2
+57171,38,Female,Other Hispanic,Living with partner,105.1,156.8,42.75,31,35.5,42.9
+61666,52,Male,Non-Hipanic White,Married,74.2,164.6,27.39,37,38.5,32
+53875,50,Male,Non-Hipanic Black,Married,113.2,162.7,42.76,39.6,36.5,41.6
+59869,62,Female,Mexican American,Married,87,170.6,29.89,38.5,38.6,32.5
+61514,80,Male,Non-Hipanic White,Married,58.8,165.5,21.47,34.6,37,26
+52368,34,Female,Non-Hipanic White,Married,103,167.2,36.84,37.6,39,41.1
+59916,47,Male,Mexican American,Separated,94.5,162.8,35.66,39.5,36,35.5
+61081,62,Male,Non-Hipanic White,Married,95.9,181.2,29.21,42.7,42.6,38.3
+56195,58,Male,Other,Married,77.8,157.7,31.28,32.1,34,34.5
+61515,23,Male,Non-Hipanic Black,Never Married,102.7,156.4,41.99,40.2,36.5,39
+62007,28,Female,Non-Hipanic White,Never Married,98.5,182,29.74,41.7,38,34.9
+58884,59,Female,Non-Hipanic White,Divorced,57.2,157.1,23.18,34.3,34.1,28
+51783,42,Female,Other Hispanic,Living with partner,82,172.7,27.49,39.9,38.4,32.5
+53151,43,Female,Non-Hipanic White,Married,85,175.2,27.69,41.8,39,36.4
+59591,76,Female,Non-Hipanic Black,Married,104.9,162.9,39.53,40,40.7,39.5
+54343,28,Female,Non-Hipanic Black,Never Married,103,169.2,35.98,39.3,38.5,39.3
+56389,27,Male,Non-Hipanic White,Married,65,163.4,24.34,35.5,36,30
+52741,73,Male,Non-Hipanic White,Married,82.9,171.4,28.22,36.6,38.4,31
+60032,30,Male,Non-Hipanic White,Married,88.3,176.1,28.47,41.8,37.8,35.6
+54273,70,Male,Non-Hipanic White,Divorced,123.7,181.4,37.59,39.7,42,40.2
+55240,60,Male,Other Hispanic,Married,63.3,161.4,24.3,35.5,34,28.4
+61236,22,Female,Non-Hipanic Black,Living with partner,164.1,164,61.01,42.1,42,51.4
+61416,22,Male,Non-Hipanic Black,Never Married,74,185,21.62,42.5,40.6,31.3
+60061,50,Male,Non-Hipanic White,Married,104.4,175.4,33.93,41.1,38,40
+51865,40,Male,Non-Hipanic Black,Married,85.8,173.2,28.6,40.2,37.2,31.6
+57131,47,Female,Non-Hipanic White,Married,61.9,175.7,20.05,39,37.5,25.3
+61756,30,Female,Non-Hipanic White,Never Married,73.2,173.4,24.35,38,38.5,28.6
+59249,71,Male,Non-Hipanic Black,Married,74.2,169.7,25.77,39.2,41.3,31.9
+52265,25,Male,Non-Hipanic White,Never Married,69.2,184.4,20.35,42.2,41.1,30
+60306,50,Female,Non-Hipanic White,Married,98.7,195.3,25.88,44.3,40.2,34.5
+61458,80,Male,Non-Hipanic White,Married,61.5,168.7,21.61,37.3,35,22.2
+52360,28,Male,Mexican American,Married,73.3,172.6,24.6,37,37.1,31
+59468,72,Male,Non-Hipanic White,Married,72.6,166.9,26.06,36.2,37,32.5
+53239,66,Male,Non-Hipanic White,Married,79.4,163.1,29.85,41.1,36.2,30.3
+55356,47,Male,Non-Hipanic Black,Divorced,91.7,166.5,33.08,39.7,39,35.8
+55342,61,Female,Non-Hipanic White,Divorced,65.7,162.9,24.76,37.1,34.5,28.8
+51756,23,Female,Non-Hipanic Black,Never Married,85.8,159.6,33.68,39.5,36,33.6
+56509,26,Male,Non-Hipanic White,Living with partner,118.4,172.7,39.7,42.2,39.8,45.9
+58708,72,Female,Mexican American,Married,70.3,168,24.91,35.6,34,30.6
+56529,70,Female,Non-Hipanic White,Married,57,160.1,22.24,35,36,25.8
+56150,52,Female,Non-Hipanic Black,Never Married,120.1,172.3,40.46,35.8,37.5,41
+56791,56,Male,Non-Hipanic Black,Never Married,103.4,185.6,30.02,44,42,36.6
+54060,47,Female,Non-Hipanic Black,Widowed,118.8,165.3,43.48,41.5,40,46.9
+53880,20,Female,Mexican American,Living with partner,51.2,145.2,24.28,35.2,31.5,25.2
+59982,57,Male,Non-Hipanic White,Divorced,86.4,174.8,28.28,40.5,40.5,33.5
+57411,52,Male,Non-Hipanic White,Never Married,89.6,180.7,27.44,43.2,41,34.7
+57876,45,Male,Non-Hipanic White,Divorced,103.9,187,29.71,42.1,38,32.7
+55944,80,Female,Mexican American,Widowed,90.3,172.3,30.42,36.8,39.2,33.2
+56309,80,Female,Non-Hipanic White,Married,55.9,158.8,22.17,34.8,35.8,26.9
+60947,22,Male,Non-Hipanic Black,Married,108.7,174.3,35.78,45,37.2,41.3
+53132,59,Male,Non-Hipanic Black,Married,60.7,158.3,24.22,38.2,35.4,30
+62156,48,Female,Non-Hipanic White,Divorced,87.1,156.9,35.38,33.9,34.5,37
+54818,34,Male,Mexican American,Married,63,163.7,23.51,37.6,36.8,27
+54034,47,Male,Non-Hipanic Black,Living with partner,91.8,166.5,33.11,44,38.5,36
+51714,58,Male,Non-Hipanic White,Divorced,113.5,184.8,33.23,42.5,44,37.7
+53079,31,Female,Non-Hipanic Black,Never Married,61.3,168.5,21.59,42,35,23.5
+52848,73,Male,Mexican American,Married,93,169.7,32.29,42,40.3,34.7
+56574,61,Female,Non-Hipanic White,Divorced,74.3,164.9,27.32,37,34.7,32.2
+56116,40,Female,Non-Hipanic White,Married,93.3,158.1,37.33,33.7,35,41
+53551,34,Male,Non-Hipanic White,Never Married,53.4,157.3,21.58,34.6,34.3,27
+59098,47,Male,Non-Hipanic White,Married,54.6,153.2,23.26,33.9,32,27.9
+57043,20,Male,Non-Hipanic Black,Living with partner,49.5,164.7,18.25,37.4,34,24
+58944,59,Male,Non-Hipanic Black,Never Married,70.6,177.7,22.36,44.6,39,32.2
+61684,25,Male,Non-Hipanic White,Living with partner,73.7,162.5,27.91,39.2,36.6,31.2
+57999,80,Male,Non-Hipanic Black,Married,82.7,166.8,29.72,35.6,38.3,34.9
+57843,43,Male,Non-Hipanic Black,Separated,94.1,162,35.86,42.4,37.3,38.5
+56807,80,Female,Non-Hipanic White,Widowed,69.6,154.8,29.04,33,34,28.4
+51805,42,Female,Non-Hipanic Black,Separated,74.7,167,26.78,39.6,38.3,33.5
+61974,50,Male,Non-Hipanic White,Widowed,108.4,187.8,30.74,46.7,39.3,34.5
+62105,43,Male,Non-Hipanic White,Married,93.2,175.9,30.12,41.1,37.5,34.1
+54232,80,Female,Non-Hipanic White,Widowed,66.1,156.8,26.88,34.4,36,28.3
+59150,21,Female,Non-Hipanic White,Never Married,53.2,160.3,20.7,37.5,35.5,25.2
+57756,65,Male,Other Hispanic,Married,69.5,165.1,25.5,36.2,35.7,29
+53781,52,Male,Non-Hipanic White,Married,45.6,160,17.81,38.2,32.5,21.7
+57872,25,Male,Other,Never Married,46.9,158.3,18.72,35.6,32.7,23.4
+56598,44,Male,Mexican American,Married,88.7,171.8,30.05,36.8,38.8,36.1
+61800,44,Female,Mexican American,Divorced,91.5,161.3,35.17,34,35.3,38.7
+60290,44,Male,Non-Hipanic White,Married,52.6,162.2,19.99,38.1,34.3,25.4
+55697,50,Male,Mexican American,Married,86.2,154.8,35.97,34.4,34.4,33.2
+61257,40,Female,Non-Hipanic White,Married,123.8,159.7,48.54,33.9,35,42.3
+57507,25,Female,Non-Hipanic White,Never Married,67.3,163.5,25.18,37.5,34.5,32.1
+53427,53,Female,Non-Hipanic White,Married,84.1,176.1,27.12,39.7,37,36.9
+60283,80,Male,Non-Hipanic White,Married,57.5,157.9,23.06,35.7,37,28
+60175,41,Male,Non-Hipanic Black,Married,75.4,160.8,29.16,39.1,34,36
+55904,38,Female,Non-Hipanic Black,Never Married,90.7,154.1,38.19,39.4,37.1,41.1
+62103,53,Female,Other Hispanic,Divorced,50.8,159,20.09,37.1,33,25
+58215,54,Female,Non-Hipanic White,Married,67.5,167.2,24.15,39.1,35.8,29.7
+59560,66,Female,Non-Hipanic White,Married,75.5,175.7,24.46,40.2,38.3,34.7
+54934,24,Female,Non-Hipanic Black,Never Married,66.8,172.1,22.55,40.9,36.5,28.5
+58052,40,Male,Other Hispanic,Separated,64.8,164.3,24,36.2,32,31
+52331,21,Male,Mexican American,Married,62.5,150.8,27.48,33.4,31.6,30.8
+52324,41,Female,Non-Hipanic White,Divorced,63.4,161.3,24.37,37,34,28
+56675,50,Female,Non-Hipanic White,Married,67.2,164.1,24.95,37.2,36.7,28.9
+58617,21,Female,Other Hispanic,Living with partner,75.6,167.8,26.85,39.4,34,31.8
+54891,64,Male,Non-Hipanic Black,Divorced,106.3,182,32.09,47.2,43.2,39.7
+56829,53,Male,Mexican American,Married,108.4,175.1,35.36,39.7,40,38.9
+51697,27,Male,Non-Hipanic Black,Married,114.9,181.3,34.96,43.2,40,40
+58489,30,Male,Mexican American,Married,56.4,149.5,25.23,32.8,32.6,28.5
+56304,32,Male,Mexican American,Married,66.2,151,29.03,35.2,32.9,31.9
+54114,28,Female,Non-Hipanic Black,Divorced,89.6,170.7,30.75,39.7,38,31.2
+55484,59,Female,Non-Hipanic White,Married,85.3,154.4,35.78,31.5,36,38
+57187,43,Male,Other Hispanic,Married,67.3,158.3,26.86,32.2,34.4,33.2
+61033,47,Female,Non-Hipanic Black,Separated,92,167.1,32.95,33.2,36.6,35.3
+53341,60,Female,Other Hispanic,Divorced,94.5,178.5,29.66,40.6,40.5,35
+56784,72,Female,Non-Hipanic White,Married,97.8,177.3,31.11,37.8,39.5,34.3
+58310,32,Female,Other,Married,44.2,158.5,17.59,35.2,33.4,23.5
+52349,45,Female,Non-Hipanic Black,Divorced,76.2,175.1,24.85,41.8,39.5,32
+53325,37,Male,Non-Hipanic White,Married,118.8,181,36.26,43.8,38.6,37.9
+54826,65,Male,Mexican American,Married,80.4,162.6,30.41,35.2,36.3,32.2
+61283,26,Male,Mexican American,Never Married,99.3,182.1,29.95,40.9,38.2,35.8
+56489,46,Male,Non-Hipanic Black,Married,84.1,157.7,33.82,38,38,36.6
+61509,26,Male,Non-Hipanic Black,Separated,105.7,180,32.62,44.2,40.8,38.9
+55063,55,Female,Non-Hipanic White,Married,63.1,168.3,22.28,37.2,35.5,30.6
+57659,54,Female,Other,Married,73.5,167,26.35,38.2,36.5,30.3
+52414,30,Male,Non-Hipanic White,Never Married,72.7,183.6,21.57,47.2,39.5,31.1
+53534,56,Female,Non-Hipanic White,Married,97,177.1,30.93,40,39,35.7
+61146,22,Female,Non-Hipanic White,Never Married,70.7,176,22.82,44.4,39.6,28.5
+51819,80,Female,Non-Hipanic White,Married,95.5,167.5,34.04,39.2,39.9,36.2
+52976,67,Female,Mexican American,Married,86.4,165.5,31.54,40.3,39,33
+54769,64,Female,Non-Hipanic White,Married,113.3,187.5,32.23,42.8,42.6,43.1
+58649,74,Female,Non-Hipanic White,Widowed,73.9,161.4,28.37,37.6,34,30.5
+59090,38,Female,Other,Never Married,68,160.6,26.36,36.1,36.2,29.7
+61215,43,Female,Non-Hipanic Black,Married,102.5,177.5,32.53,45,35.6,39.9
+59379,53,Male,Non-Hipanic White,Married,66.6,178.4,20.93,41.3,38,28.5
+60854,61,Female,Non-Hipanic White,Married,104.5,164.3,38.71,31.8,38,40.2
+60125,72,Female,Non-Hipanic White,Married,78.3,171.3,26.68,42,37.6,31.2
+55967,41,Male,Other Hispanic,Married,87,175.2,28.34,44.8,40,33.9
+52375,67,Female,Non-Hipanic White,Widowed,82.5,171.4,28.08,39,36.5,31.2
+56331,59,Male,Non-Hipanic Black,Married,56.5,165.9,20.53,36,36.5,28
+52815,67,Male,Non-Hipanic White,Divorced,103.1,184.2,30.39,41.7,41.7,37.4
+53998,40,Male,Mexican American,Married,81.8,166.5,29.51,39.1,37,36.6
+61850,60,Female,Non-Hipanic White,Married,79.8,172.2,26.91,34.6,35.9,32
+60833,52,Female,Non-Hipanic White,Married,72.1,184.3,21.23,47.2,37.4,28.7
+57319,23,Male,Non-Hipanic White,Never Married,63.7,162.3,24.18,37.3,35.2,28.3
+53443,51,Male,Non-Hipanic Black,Married,94.9,166.8,34.11,34.6,37.8,37.2
+58220,80,Female,Other,Married,72.2,166.3,26.11,37.3,38.2,32
+54383,27,Female,Non-Hipanic White,Separated,57.1,164.2,21.18,36.8,33.5,26.3
+55459,36,Female,Other Hispanic,Married,65.1,165,23.91,36.5,35.8,32.7
+61453,76,Female,Other Hispanic,Married,78.3,163.3,29.36,34,36.6,33
+55891,61,Male,Non-Hipanic Black,Married,69.3,170.9,23.73,39.4,36,29.5
+61875,58,Female,Non-Hipanic White,Never Married,88.1,181.2,26.83,46.8,43,33.2
+62149,66,Male,Non-Hipanic White,Married,50.7,154.2,21.32,31.7,32.3,25.7
+60984,30,Male,Non-Hipanic Black,Married,101,167.2,36.13,40.1,38,34.5
+53823,24,Male,Mexican American,Never Married,97.1,180.9,29.67,44.7,41,34.2
+56835,60,Female,Non-Hipanic Black,Divorced,69.8,155.8,28.76,31.5,33,36
+53478,30,Female,Mexican American,Never Married,75.9,156.1,31.15,34.7,35.1,31.9
+56507,45,Female,Non-Hipanic White,Married,86.7,184,25.61,44.1,40.5,33
+51834,66,Female,Mexican American,Widowed,49,146.5,22.83,31,33.8,26.5
+61680,61,Male,Non-Hipanic Black,Divorced,60.7,152.5,26.1,31.5,35,28.7
+55602,37,Female,Non-Hipanic White,Married,75.8,180.7,23.21,42.5,37.4,29.5
+57289,27,Male,Non-Hipanic White,Never Married,112,181.3,34.07,40.7,42,42
+56641,44,Female,Non-Hipanic White,Never Married,76.6,160,29.92,40.6,36,32.8
+61041,41,Male,Other,Married,70.3,156.4,28.74,41.6,35.3,33
+58759,64,Female,Other Hispanic,Widowed,67.2,152.9,28.74,33,32,30.7
+61430,39,Male,Other Hispanic,Married,84.7,175.6,27.47,39.4,36.6,32.1
+57737,68,Female,Other Hispanic,Married,78.8,174.6,25.85,40.7,37.8,31.5
+60762,27,Female,Mexican American,Married,66.4,172.9,22.21,41.4,36.8,28.4
+60867,62,Male,Non-Hipanic White,Married,86.9,173.8,28.77,37.7,36.4,34.2
+51832,38,Male,Other,Married,78.9,174.5,25.91,40.2,37.1,31.3
+54161,21,Male,Non-Hipanic White,Living with partner,76,179,23.72,42.5,36.5,33.1
+53237,74,Female,Non-Hipanic White,Married,118.7,174,39.21,40.4,43,41.3
+58173,47,Male,Mexican American,Married,81.7,172.3,27.52,41.1,39.6,32.4
+57965,20,Female,Mexican American,Never Married,92.2,175.7,29.87,40,41.1,33.9
+54416,52,Female,Non-Hipanic White,Divorced,116.5,164.9,42.84,36.5,39.5,44
+52116,29,Male,Mexican American,Living with partner,59.7,165.1,21.9,38.5,38,30
+61591,46,Male,Other,Married,78.1,183.5,23.19,44.2,42.6,29.4
+59219,32,Male,Non-Hipanic Black,Never Married,65.6,175.5,21.3,44,36.5,30
+56228,39,Female,Non-Hipanic White,Living with partner,81.4,186.8,23.33,46.4,42.5,31.9
+52532,80,Male,Non-Hipanic White,Married,88.3,181.9,26.69,40,41,29.3
+52811,29,Male,Non-Hipanic White,Married,48.1,158.8,19.07,37.5,33.6,22.8
+57781,61,Female,Non-Hipanic Black,Married,92.6,166.6,33.36,43,38,36.7
+58809,57,Male,Non-Hipanic White,Divorced,86.4,180.6,26.49,45.1,41.6,33.5
+57400,30,Female,Non-Hipanic Black,Living with partner,87.4,175.3,28.44,45.6,40,35.5
+53914,60,Male,Non-Hipanic White,Married,75.5,183.3,22.47,41.3,38.4,28.4
+60460,24,Male,Mexican American,Never Married,64.8,176.7,20.75,42.5,40,29.3
+60661,22,Female,Mexican American,Never Married,92.9,182,28.05,43.6,40,33.4
+59078,61,Male,Non-Hipanic White,Married,91.8,180.4,28.21,39.8,38.9,35.6
+54364,61,Female,Non-Hipanic White,Married,89.8,174.5,29.49,41.3,37,34.3
+56737,64,Male,Non-Hipanic White,Married,98,176,31.64,39.9,38,36.5
+60685,30,Male,Non-Hipanic Black,Living with partner,109.1,172.6,36.62,42.2,40.2,39.5
+61979,54,Female,Other Hispanic,Separated,68.8,172.6,23.09,38,37,30
+59304,42,Male,Non-Hipanic Black,Never Married,155.2,186.1,44.81,42,41.5,44
+57357,63,Male,Non-Hipanic Black,Married,73.7,164,27.4,40,36.8,31.9
+53346,46,Female,Non-Hipanic White,Married,60.3,174.6,19.78,40.8,38,25
+61071,80,Female,Non-Hipanic White,Married,83.7,163,31.5,37.7,38,33
+61154,44,Female,Mexican American,Never Married,72.9,154.2,30.66,32.5,35,33.3
+56173,56,Male,Non-Hipanic White,Married,111.1,192.6,29.95,48.7,42.7,36.5
+53827,77,Female,Non-Hipanic White,Married,66.8,170.3,23.03,44,40.1,28
+53058,69,Male,Non-Hipanic White,Married,83.4,176.7,26.71,39,38.7,32.1
+52648,39,Male,Non-Hipanic White,Married,106.1,188.5,29.86,43.1,41.8,36.6
+52145,29,Female,Mexican American,Separated,72.2,159.8,28.27,35.1,35,33
+58328,50,Male,Other Hispanic,Divorced,107.3,170.8,36.78,41.8,38,39.9
+54238,42,Male,Other,Married,65.1,157.5,26.24,37.5,33.3,32.1
+59865,78,Male,Non-Hipanic White,Married,80.9,170,27.99,39.4,38.7,29.8
+57772,65,Female,Mexican American,Widowed,71.2,157.6,28.67,32.9,33.9,34.2
+56599,70,Female,Other Hispanic,Married,102.8,179.5,31.91,35.5,39.4,36.7
+52364,33,Female,Mexican American,Never Married,50,149.5,22.37,34.2,32.1,28.7
+61548,80,Female,Mexican American,Widowed,58.4,145.9,27.43,28.5,33.4,30.8
+58744,76,Male,Non-Hipanic White,Married,94,167,33.71,36.7,37.8,36.4
+60964,50,Male,Non-Hipanic Black,Married,64.9,158.4,25.87,34,36,31.2
+59159,20,Female,Mexican American,Married,63.8,156.4,26.08,35.3,32.5,30.2
+60776,34,Female,Other Hispanic,Divorced,65.8,158.4,26.23,38.5,37.4,33.3
+54253,47,Female,Non-Hipanic Black,Married,88.7,169.3,30.95,37.4,40,35.8
+61286,31,Female,Other,Married,89,159,35.2,44.8,35.1,36.8
+54833,53,Male,Mexican American,Never Married,62.7,168.1,22.19,39.5,35.8,25.5
+54683,43,Female,Mexican American,Married,102.6,168.7,36.05,35.7,38,36.8
+61063,71,Female,Other,Married,46.6,142.7,22.88,32.7,31.7,28.3
+61907,53,Male,Non-Hipanic White,Married,92.7,165.3,33.93,37.6,35.7,34.7
+51635,80,Male,Non-Hipanic White,Widowed,89.6,180.1,27.62,43,41.7,33.3
+53686,65,Male,Mexican American,Married,62.8,152.5,27,34.5,34.6,31.3
+53319,30,Male,Non-Hipanic White,Married,71,170.4,24.45,40.5,38.1,31.2
+53605,46,Female,Non-Hipanic White,Divorced,82.2,162.6,31.09,32.4,37,34.4
+53845,42,Male,Mexican American,Married,70.1,153.7,29.67,34.4,34.8,34
+52718,52,Male,Non-Hipanic White,Living with partner,118.5,160.9,45.77,35.9,33.4,40.3
+53305,31,Male,Non-Hipanic White,Married,86.1,182.7,25.79,43.5,39.5,33.6
+52039,43,Female,Non-Hipanic White,Never Married,86.9,150.2,38.52,27.6,32.5,38.6
+53996,71,Male,Non-Hipanic Black,Married,86.4,176.9,27.61,42.7,39,33.5
+51974,55,Male,Mexican American,Married,71.8,158.7,28.51,35.1,36.1,30.1
+52078,80,Male,Non-Hipanic White,Married,120.8,172,40.83,37.7,40.6,41
+59153,35,Female,Non-Hipanic Black,Separated,100.3,156.7,40.85,37.6,37.8,40
+53745,60,Male,Mexican American,Married,98.2,173.8,32.51,42,41.4,37
+51701,36,Male,Non-Hipanic White,Separated,79.2,174.7,25.95,41,38,33
+51983,22,Female,Non-Hipanic White,Never Married,65.8,154.8,27.46,35.4,34.6,30.7
+59214,73,Male,Non-Hipanic White,Married,62.5,171,21.37,38,31.1,30
+54346,66,Female,Other Hispanic,Living with partner,65.8,147,30.45,29.5,32.9,31
+58824,59,Female,Non-Hipanic White,Widowed,114.3,166.9,41.03,34.7,38.8,38.3
+61960,78,Female,Non-Hipanic White,Widowed,111.7,154.2,46.98,32.2,38,43.3
+56122,20,Female,Non-Hipanic White,Never Married,65.9,164,24.5,36.1,34,28.9
+57163,30,Male,Non-Hipanic White,Never Married,89.7,172.7,30.08,37.2,36,35
+61516,21,Male,Other Hispanic,Never Married,100.5,170.4,34.61,42,39.7,40.3
+60043,38,Female,Non-Hipanic Black,Married,83.5,182.7,25.02,43,40,35
+54355,80,Male,Non-Hipanic White,Widowed,100.5,168.9,35.23,37.3,38.8,28.8
+57636,80,Male,Non-Hipanic White,Widowed,72.3,160.3,28.14,34,37,28.5
+58170,76,Female,Non-Hipanic White,Widowed,70,148.2,31.87,33.4,34.5,31
+56053,32,Male,Non-Hipanic White,Never Married,83.7,183.9,24.75,41.2,38.6,32
+60293,80,Female,Non-Hipanic White,Widowed,58.4,155.8,24.06,35.5,35.1,27.5
+58300,64,Male,Non-Hipanic White,Married,91.8,163.5,34.34,36.5,39.5,37.8
+55268,68,Male,Non-Hipanic White,Living with partner,111.7,173.1,37.28,39,42.4,39.4
+53659,58,Male,Mexican American,Living with partner,72,167.4,25.69,37.3,36.4,31.7
+52376,46,Male,Non-Hipanic Black,Married,96.7,160.7,37.45,31.2,36.5,42.5
+52131,38,Male,Non-Hipanic White,Married,69.9,155.6,28.87,36,33.4,30.6

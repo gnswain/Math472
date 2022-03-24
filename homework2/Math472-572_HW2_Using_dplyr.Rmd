@@ -1,0 +1,136 @@
+---
+title: "Math 472/572 Homework 2: Using dplyr"
+author: "Graham Swain"
+date: "Due Wednesday, February 9, 2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Instructions
+
+You've been provided with the spreadsheet (.csv) on WCU employee salary data retrieved (and slightly reformmated) from UNC Salary Database <https://uncdm.northcarolina.edu/salaries/index.php>.  The variables in this data set are institution, last_name, first_name, init (middle initial), age, job_category, annual_salary, home_dept, work_title, and hire_date (given in the form YYYYMMDD).
+
+You are to import this into R and use R functionality to answer the following problems.  Please put the answer(s) to each problem in the space immediately below the problem, and include all of the associated R code and output needed.
+
+```{r, include = FALSE}
+library(tidyverse)
+library(dplyr)
+
+salary <- read.csv("salary.csv")
+```
+
+
+## Problems 
+
+1.  Add three new variables to this data frame: `hr_yr`, `hr_mo`, `hr_day` where they are the year, month, and day of the hire.  Then add another new variable, `yrs_here`, giving the number of years the person has been at WCU (make this simple and determine this to be 2022 minus their hire year).  Make sure you save this data frame to a name (the name of the original data frame, or a new name).  
+
+```{r}
+salary <- mutate(salary, hr_yr = hire_date %/% 10000, 
+                 hr_month = (hire_date %% 10000) %/% 100 , 
+                 hr_day = hire_date %% 100, 
+                 yrs_here = 2022 - hr_yr)
+salary %>% head(5)
+```
+
+
+2.  Return a data frame containing only information for Associate Professors in English.  Next return a data frame containing home departments and job title pairings (e.g. History, Instructor; History, Assistant Professor; ...) along with the mean salary, median age, and standard deviation of years here.
+
+```{r}
+(salary_eng <- salary %>% filter(home_dept == "English", 
+                      work_title == "Associate Professor")) %>%
+  head(5)
+
+dept_stats <- (salary %>% 
+                 group_by(home_dept, work_title) %>% 
+                 summarize(mean_salary = mean(annual_salary, na.rm = TRUE), 
+                           med_age = median(age, na.rm = TRUE), 
+                           std_years = sd(yrs_here, na.rm = TRUE)))
+dept_stats %>% head(5)
+```
+
+
+3.  What is the total amount of money spent on professor salaries (assistant professor, associate professor, and professor) in the Mathematics & Computer Science Department.
+
+```{r}
+cs <- filter(salary, home_dept == "Mathematics & Computer Science" & 
+         (job_category == "Assistant Professor" |
+         job_category == "Associate Professor" |
+         job_category == "Professor"))
+(cs %>% group_by(job_category) %>% summarize(total_salary = sum(annual_salary)))
+sum(cs$annual_salary)
+```
+
+**Assistant Professors: $196,146**  
+**Associate Professors: $616,841**  
+**Professors: $522,015**  
+**Total Professor Salaries: $1,335,002**  
+
+
+4.  Create a data frame called `psyc` whose rows are the employees from the Psychology department and includes only the variables last_name, first_name, annual_salary, work_title, and hr_yr and is ordered by annual salary (from highest pay to lowest pay).  Next, make a box plot of the annual salary broken out by work title.
+
+```{r}
+psyc <- (salary %>% 
+           filter(home_dept == "Psychology") %>% 
+           select(last_name, first_name, annual_salary, work_title, hr_yr) %>%
+           arrange(desc(annual_salary)))
+psyc %>% head(5)
+
+ggplot(psyc) +
+  geom_boxplot(aes(x = annual_salary, y = work_title))
+```
+
+
+5.  Use faceting (recall from `ggplot()`) to make histograms of annual salaries of the Biology, Chemistry & Physics, Geosciences & Natural Resources, and Mathematics & Computer Science departments.  Next use faceting to make a plot of age versus annual salaries for these same departments, using work_title to determine the color and size of the points.
+
+```{r, warning = FALSE}
+salary5 <- (salary %>% 
+              filter(home_dept == "Biology" | 
+                       home_dept == "Chemistry & Physics" |
+                       home_dept == "Geosciences & Natural Resources" |
+                       home_dept == "Mathematics & Computer Science"))
+salary5 %>% head(5)
+
+ggplot(salary5) +
+  geom_histogram(aes(x = annual_salary), binwidth = 5000) +
+  facet_wrap(~home_dept)
+
+ggplot(salary5) +
+  geom_point(aes(x = age, y = annual_salary, color = work_title, size = work_title)) +
+  facet_wrap(~home_dept)
+```
+
+
+6.  Create a data frame called `dept_summary` whose rows are the home departments and whose columns are department size, mean department salary, median department salary, and maximum salary.  Then order the departments by the highest mean salary and show the 10 highest paid departments.  Lastly, order the departments by the highest median salary and show the 10 highest paid departments.
+
+```{r}
+dept_summary <- (salary %>%
+                   group_by(home_dept) %>%
+                   summarize(dept_size = n(), 
+                             mean_salary = mean(annual_salary, na.rm = TRUE),
+                             med_salary = median(annual_salary, na.rm = TRUE),
+                             max_salary = max(annual_salary)))
+dept_summary %>% head(5)
+
+(dept_summary %>% arrange(desc(mean_salary)) %>% head(10))
+
+(dept_summary %>% arrange(desc(med_salary)) %>% head(10))
+```
+
+
+7.  What year(s) saw the greatest number of hires of current WCU employees?  Indicate the distribution of employees hired over time, in some visual display.
+
+```{r}
+years <- (salary %>% 
+            group_by(hr_yr) %>% 
+            summarize(count = n()) %>% 
+            arrange(desc(count)))
+years  %>% head(5)
+
+ggplot(years) +
+  geom_col(aes(x = hr_yr, y = count))
+```
+
+**2019 had the most hires**

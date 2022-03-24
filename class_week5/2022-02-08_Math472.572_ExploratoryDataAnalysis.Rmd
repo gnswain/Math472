@@ -1,0 +1,175 @@
+---
+title: "Math 472/572 and Exploratory Data Analysis"
+date: "February 8, 2022"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+#  Exploratory Data Analysis (EDA)
+
+Exploratory Data Analysis can be considered an iterative process or cycle
+in which we examine data to try to discover patterns, find anomalies, test
+hypotheses, and check assumptions.  We can use the tools we've learned, namely
+visualization and transformation of data.  We'll go deeper into this in future
+weeks, but we have enough skills to try to do some of this now.
+
+The author of our textbook suggests that EDA can follow the following cycle:
+1.  Generate questions about your data.
+2.  Search for answers by visualizing, transforming, and modeling your data.
+3.  Use what you learn to refine your questions and/or generate new questions.
+
+
+The author of the text also says that the key to asking *quality* questions 
+is to generate a large *quantity* of questions!  Doing this takes practice. 
+Practice I hope that will start in this class.
+
+Given a new set of data, here are some questions you may ask:
+-  What values are most common?  Why?
+-  What values are most rare?  Why?
+-  Does what I'm finding match my expectations?
+-  Are there any unusual patters?  If so, are there any explanations for these?
+-  What type of variation occurs in my variables.
+-  What type of covariation occurs between my variables.
+
+Today, we'll play with some data sets Dr. McNelis has provided (one of which 
+you've used already.)  Go ahead and import the \texttt{bodymeas.csv} and 
+\texttt{coasters.csv}
+
+```{r}
+bodymeas <- read.csv("~/math472/class_week5/bodymeas.csv")
+coasters <- read.csv("~/math472/class_week5/coasters.csv")
+str(bodymeas)
+View(bodymeas)
+str(coasters)
+View(coasters)
+```
+
+## Visualizing Distributions
+
+### Single Variable - Categorical
+<!-- Also explore creating tables and using `geom_col()` and/or `geom_bar()` with -->
+<!-- stat = "identity" -->
+
+What can you say about marital status of the individuals included in our 
+`bodymeas` data set?
+
+```{r}
+ggplot(bodymeas) + geom_bar(aes(x = marital)) # very cluttered x-axis
+ggplot(bodymeas) + geom_bar(aes(y = marital))
+```
+
+Can you find the exact counts of each type of marital status given?
+
+```{r}
+bodymeas %>% group_by(marital) %>% summarize(num = n())
+```
+
+Can you generate a chart using this chart/data frame?
+
+```{r}
+o <- bodymeas %>% group_by(marital) %>% summarize(num = n())
+ggplot(o) + geom_col(aes(x = num, y = marital))
+
+# or equivalently
+ggplot(o) + geom_bar(aes(x = num, y = marital), stat = "identity")
+```
+
+### Single Variable - Numerical
+
+Play with different numerical variables, such as `weight` or `height` to 
+see what you can tell about the values?  Which are most common?  Are there
+any patterns?  Does this match our expectations?
+
+```{r}
+ggplot(bodymeas) + geom_histogram(aes(x = weight), binwidth = 1)
+```
+
+Compare what you get using `geom_histogram()`, `geom_freqpoly()`, and 
+`geom_density()`.  How can you change bin widths and does doing so change
+what we say about the data?
+
+```{r}
+ggplot(bodymeas) + geom_freqpoly(aes(x = weight), binwidth = 1)
+ggplot(bodymeas) + geom_density(aes(x = weight))
+```
+
+In addition to filtering data to look at subgroups, we can also consider
+adjusting our $x$ or $y$ axes using `coord_cartesian(xlim = c(xmin,xmax))` 
+or similarly for our $y$-axes values.
+
+What if you use a boxplot and break this up by marital status or race?  We can
+also rearrange the order in which the individual boxplots occur by using the
+`reorder()` function.
+
+```{r}
+ggplot(bodymeas) + geom_boxplot(aes(x = weight, fill = marital))
+#ggplot(bodymeas) + 
+#  geom_boxplot(aes(x = reorder(weight, marital), fill = marital))
+```
+
+### Discrete Variables with Many Values
+
+What happens if you try to get an idea of the ages of individuals represented
+in our `bodymeas` data?
+
+```{r}
+ggplot(bodymeas) + geom_histogram(aes(x = age), binwidth = 10)
+```
+
+
+Find a way to create a chart of ages broken down by the decade of age (i.e.
+ages 50, 51, 52, ... 59 would all just be considered 50 (for the 50's decade))
+
+```{r}
+bodymeas %>% mutate(decade = (age %/% 10) * 10) %>% group_by(decade) %>% summarize(count = n()) %>% ggplot() + 
+  geom_col(aes(x = decade, y = count))
+```
+
+##  Looking for Variation/Relations Between Variables (Covariation)
+
+### Between Categorical and Continuous Variables
+
+We've played with this a good bit with `ggplot()`, we can break out a continuous
+variable by categorical value.  Use the `coasters` data frame to get an idea of 
+the top speed of roller coasters based on the type of construction?  
+
+```{r}
+ggplot(coasters) + geom_density(aes(x = speed)) + facet_wrap(~construction)
+ggplot(coasters) + geom_density(aes(x = speed, color = construction))
+```
+
+
+###  Between Categorical and Categorical Variables
+
+Use the `coasters` data set and use `geom_tiles()` to make a visualization
+of the average speed of roller coasters broken down by construction and number
+of inversions.
+
+```{r}
+coasters %>% 
+  group_by(construction, numinversions) %>% 
+  summarize(avg_speed = mean(speed, na.rm = TRUE)) %>%
+ggplot() + 
+  geom_tile(aes(x = construction, y = numinversions, fill = avg_speed))
+```
+
+What about using this technique for visualizing the number of people in our
+`bodymeas` set based on `race` and `maritial` status?
+
+###  Between Continuous and Continuous Variables
+
+Compare `bodymeas` tibble, compare height and uparmlength
+
+```{r}
+ggplot(bodymeas) + geom_bin2d(aes(x = height, y = uparmlength))
+ggplot(bodymeas) + geom_hex(aes(x = height, y = uparmlength))
+```
+

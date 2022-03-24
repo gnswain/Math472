@@ -1,0 +1,259 @@
+---
+title: "2022-01-25 Data Transformation with dplyr"
+author: "R Studio"
+date: "1/23/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Getting Started
+
+```{r library}
+library(tidyverse)
+```
+We've already talked about visualizing data using `ggplot`.  At times, the data we have may not have exactly the information we want, or we want to reorganize it to better get to answers we would like.  In cases like this, we will likely want to *transform* our data.  The library in R that has functions to assist with these transformations is `dplyr`, which stands for **d**ata frame pliers.  We'll focus on some of these `dplyr` tools. 
+
+For most of this chapter (3 in the paperback book; 5 in the online edition), we'll use a new data set.  The `flights` data set included in the "nycflights13" package and library.
+
+```{r flightdata}
+install.packages("nycflights13")
+library(nycflights13)
+View(flights)
+```
+
+Let's get an idea of what this data contains.  How do you think we can do that?
+
+To look at the top 5 lines of the data:
+
+```{r lookat}
+head(flights, 5)
+```
+
+## Sorting
+
+We can sort our data by values in ascending (default) or descending (`desc()`) order associated with specific variable name or names using the `arrange()` function.  For instance, we can sort our flights in terms of destination cities, and then by carrier (in reverse alphabetical order), and then by scheduled departure time:
+
+```{r sorting}
+arrange(flights, dest, desc(carrier), dep_time)
+```
+
+Note, if we order our data by arrival delays instead.  What might you notice?
+
+```{r}
+arrange(flights, arr_delay)
+```
+
+### Some Exercizes from the Online Text
+
+5.3.1 Exercises
+2.  Sort flights to find the most delayed flights. Find the flights that left earliest.
+```{r}
+arrange(flights, desc(arr_delay), dep_time)
+```
+
+
+4.  Which flights traveled the farthest? Which traveled the shortest?
+```{r}
+head(arrange(flights, distance))
+head(arrange(flights, desc(distance)))
+```
+
+
+## Shrinking or Cutting Our Data
+
+We could consider removing either rows (observations) or columns (variables) from our data, if we will not need them.
+
+
+### Removing Variables with `select()`
+
+For instance, suppose we decide we do not need the variable that holds the scheduled date and hour of the flight (time_hour)?  We can remove that variable and output a new dataframe.  We do this with the `select()` function which takes as its first argument the dataframe name, followed by the variable names we want to keep.  Consider the following ways to do this:
+
+```{r}
+#flights <- select(flights, -(time_hour))  # all except time_hour
+#View(flights)
+
+flights2 <- select(flights, year:distance) # all from "year" through "distance"
+View(flights2)
+```
+
+`select()` also allows you to rearrange columns based on the ordering you give of your variables.  For instance, suppose we wanted our departure time and departure delay listed first, and everything else to follow it?  Or what if we wanted all of our delay values listed first?  
+
+```{r}
+select(flights, dep_time, dep_delay, everything())
+```
+
+There are some refining functions that help us too, such as `starts_with(), ends_with(), contains()` that make it easier when you have many, many variables.
+
+```{r}
+select(flights, starts_with('dep'), everything())
+```
+
+
+#### Some Excercises
+
+5.4.1 Exercises
+1.  Brainstorm as many ways as possible to select dep_time, dep_delay, arr_time, and arr_delay from flights.
+```{r}
+select(flights, dep_time, dep_delay, arr_time, arr_delay)
+select(flights, starts_with('dep'), starts_with('arr'))
+select(flights, contains('dep'), contains('arr'), -carrier, -sched_dep_time, -sched_arr_time)
+select(flights, ends_with('time'), ends_with('delay'), -sched_dep_time, -sched_arr_time, -air_time)
+```
+
+
+2.  What happens if you include the name of a variable multiple times in a select() call?
+```{r}
+select(flights, year, year)
+```
+
+Only shows it once.
+
+
+3.  What does the `any_of()` function do? Why might it be helpful in conjunction with this vector?
+
+```{r anyof}
+ars <- c("year", "month", "day", "dep_delay", "arr_delay")
+ars
+select(flights, any_of(ars))
+```
+
+It is helpful because it allows you to specify a vector of variables in another line of code.
+Makes it easier to read.
+
+4.  Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+
+```{r}
+select(flights, contains("TIME"))
+select(flights, contains("TIME", ignore.case = FALSE))
+```
+It's not too surprising, change it with the argument `ignore.case = FALSE`
+
+### Selecting/Removing Observations with `filter()`
+
+Just as we can select variables (columns from our dataframe), we can also select or remove observations based on their values.  We can do this using the `filter()` function which has the dataframe as the first argument, followed by logical arguments dealing with variable values.  For instance
+
+```{r filterex1}
+filter(flights, air_time > 180)
+filter(flights, air_time > 180, dep_delay > 30)
+filter(flights, air_time > 180 | dep_delay > 30)
+filter(flights, air_time > 180 , !(carrier == "DL"))
+```
+
+In addition to our logical operators, another operator that can be handy is the `%in% operator, which can act like the $\in$ (is a member of) set operator.  Consider this filter.  What is it selecting?
+
+```{r filterex2}
+head(filter(flights, carrier %in% c("AA", "DL", "UA")),5)
+```
+
+####  Some Excercises from the Text
+
+5.2.4 Exercises
+1.  Find all flights that
+- Had an arrival delay of two or more hours
+- Flew to Houston (IAH or HOU)
+- Arrived more than two hours late, but didn’t leave late
+- Were delayed by at least an hour, but made up over 30 minutes in flight
+- Departed between midnight and 6am (inclusive)
+Another useful dplyr filtering helper is between(). What does it do? Can you use it to simplify the code needed to answer the previous challenges?
+```{r}
+filter(flights, arr_delay > 119)
+filter(flights, dest %in% c('IAH', 'HOU'))
+filter(flights, arr_delay > 119 & dep_delay < 1)
+filter(flights, dep_delay >= 60 & arr_delay < 30)
+filter(flights, dep_time >= 0 & dep_time <= 600)
+```
+
+between() is shorthand for x >= lower_bound & x <= upper_bound. Would be useful for the
+previous exercise.
+
+2.  How many flights have a missing dep_time? What other variables are missing? What might these rows represent?
+```{r}
+filter(flights, is.na(dep_time))
+```
+It likely represents cancelled flights.
+
+3.  Why is `NA ^ 0` not missing? Why is `NA | TRUE` not missing? Why is `FALSE & NA` not missing? Can you figure out the general rule? (`NA * 0` is a tricky counterexample!)
+
+
+Save all the flights that weren't cancelled in a datagrame called not_cancelled
+```{r}
+(not_cancelled <- filter(flights, !is.na(dep_time)))
+```
+
+## Creating New Variables Using `mutate()`
+
+First, let's create a new dataframe (tibble) consisting of the flights that were not cancelled:
+
+
+Now we can consider creating a new data frame that has new variable values for the amount of time gained in the air as well as the speed (keeping in mind that speed =  | distance / time | where distance is in miles and time is in hours).  We can do this using the `mutate()` which takes as its first argument the dataframe followed by the definition of the new variables, and outputs a new dataframe.
+
+```{r}
+(flights_new <- mutate(flights, gain = arr_delay - dep_delay, speed = abs(distance / air_time) * 60))
+# gain in minutes
+# speed in miles / hour
+```
+
+Let's change our departure time and arrival times from HHMM to total number of minutes (after midnight).
+For example, if departure time is 1324 this should end up as 13 * 60 + 24.  
+We will do this using modulo arithmetic.
+
+We can do integer division, ex: 13 (integer divided by) 4 = 3.  
+In R, that's done by `13%/%4`.
+
+```{r}
+13 %/% 4 # integer division
+13 %% 4  # remainder of that integer division
+```
+
+How can we use integer division to get 13 from 1324?
+Integer divide by 100, the minutes is the remainder.
+
+```{r}
+(flights_new <- mutate(flights_new, dep_in_mins = (dep_time %/% 100) * 60 + dep_time %% 100, arr_in_mins = (arr_time %/% 100) * 60 + arr_time %% 100))
+```
+
+Compare air_time with (arr_in_mins - dep_in_mins)
+
+```{r}
+comp_air_time <- transmute(flights_new, air_time, tot_time = arr_in_mins - dep_in_mins)
+arrange(comp_air_time, tot_time)
+```
+
+```{r}
+comp_air_time <- transmute(flights_new, air_time, tot_time = (arr_in_mins - dep_in_mins) %% (24 * 60))
+arrange(comp_air_time, tot_time)
+```
+
+
+
+Using `transmute()` will give a new dataframe with only the new variables included.
+
+### Modular Arithmetic
+
+### Ranking
+
+`dplyr()` offers some ranking functions:  `row_number()`, `dense_rank()`, `percent_rank()`, `cume_dist()`.  Explore what these may do with a fairly simple dataframe:
+
+```{r rankplay}
+play <- c(4, 1, NA, 5, 2, 3, 2)
+```
+
+What is the difference between `row_number()` and `dense_rank()`?
+
+####  Some Excercises from the Text
+
+5.5.2 Exercises
+1.  Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they’re not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+
+2.  Compare `air_time` with `arr_time - dep_time`. What do you expect to see? What do you see? Can you explain what might be going on?
+
+3.  Compare `dep_time`, `sched_dep_time`, and `dep_delay`. How would you expect those three numbers to be related?
+
+4.  Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for `min_rank()`.
+
+5.  What does 1:3 + 1:10 return? Why?
+
+## Collapsing Values Down to a Single Summary with `summarize()`

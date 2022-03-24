@@ -1,0 +1,319 @@
+---
+title: "Math 472/572: Tidying Up Data"
+date: "March 1, 2022"
+output: html_notebook
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+# What is "tidy" data again?
+
+We've talked about "tidy" data before.  What can you say characterizes tidy data?
+
+Readability. It is rectangular in shape. Has three qualities:
+1) Variables are in columns.
+2) Observations are in the rows.
+3) Individual observations are in cells.
+
+##  Some examples of data that isn't tidy
+Here are some ways you may find that data is not tidy:
+Column headers are values, not variable names.
+
+- Multiple variables are stored in one column.
+- Variables are stored in both rows and columns.
+- Multiple types of observational units are stored in the same table.
+- A single observational unit is stored in multiple tables.
+
+## Examples of Untidy Data
+
+For ease, we'll start out with the example sets of data given in the textbook and as part of R's `tidyr` packakage.  These give the number of cases of tuberculosis in different coutries in 1999 and 2000 as well as the country's total population at the time.
+
+```{r untidytables}
+table1
+
+table2
+
+table3
+
+# Spread across two tibbles
+table4a  
+
+table4b  
+```
+
+When you think of the data, what makes sense as the variables?  Then what constitutes an "observation"?  Are any of these tables in a tidy format?  
+
+
+Given each table format, could you easily:
+- compute the number of cases per year?
+- compute the rate of spread in terms of number of cases per 10,000 (i.e. cases / pop *10000)?
+- make a plot of the number of cases over time broken out by country?
+
+
+For table1:
+
+```{r}
+table1
+
+table1 %>% 
+  group_by(year) %>% 
+  summarise(cases_per_year = sum(cases))
+```
+
+### 12.2.1 Selected Exercises
+
+2.  Compute the proportion of the population with TB for `table2`, and `table4a + table4b`. You will need to perform four operations:
+
+Extract the number of TB cases per country per year.
+Extract the matching population per country per year.
+Divide cases by population, and multiply by 10000.
+Store back in the appropriate place.
+Which representation is easiest to work with? Which is hardest? Why?
+
+3.  Recreate the plot showing change in cases over time using table2 instead of table1. What do you need to do first?
+
+# Pivoting
+
+So, how might we take some of the tables (table2 - table4b) and turn them into a tidy representation?  That will depend on what we need to do to the existing tibble to make it tidy.
+
+##  When Column Headings are Really Variable Values
+
+In `table4a` and `table4b` our column headings are actually values of the variable "year".  So we want to "pivot" those column headings down to the rows so they become values in an observation.  To do that, we can use the `pivot_longer()` function, because we will be making our tibble longer than it was before by adding those new rows.
+
+```{r}
+table4a
+
+new_table4a <- table4a %>% pivot_longer(cols = c(`1999`, `2000`), names_to = "year" , values_to = "cases")
+new_table4a
+
+```
+
+Now try the same with `table4b`.  We can use `left_join()` to combine these into a single tibble.  Note, `left_join(df1, df2)` adds columns from df2 to df1, matching rows based on keys, including all of the observations from df1. 
+
+```{r}
+new_table4b <- table4b %>% pivot_longer(cols = c(`1999`, `2000`), names_to = "year", values_to = "population")
+new_table4b
+
+new_table4 <- left_join(new_table4a, new_table4b)
+new_table4
+```
+
+## When an Observation is Distributed Over Multiple Rows
+
+Consider `table2` now.  It had a variable called "type" that indicated if the other variable "count" was the number of cases or the total population.  We want to take those observation values and pivot to make them variable names (i.e. columns), thus making our tibble wider.  So we will use `pivot_wider()`.
+
+```{r}
+table2
+
+new_table2 <- table2 %>% pivot_wider(names_from = type, values_from = count)
+new_table2
+```
+
+
+### 12.3.3 Selected Exercises
+1.  Why are `pivot_longer()` and `pivot_wider()` not perfectly symmetrical?
+Carefully consider the following example:
+
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2016, 2016),
+  half  = c(   1,    2,     1,    2),
+  return = c(1.88, 0.59, 0.92, 0.17)
+); stocks
+
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return) %>% 
+  pivot_longer(`2015`:`2016`, names_to = "year", values_to = "return") %>%
+  arrange(year, half)
+
+# year goes from a dbl to chr
+```
+
+(Hint: look at the variable types and think about column names.)
+
+`pivot_longer()` has a names_ptypes argument, e.g.  `names_ptypes = list(year = double())`. What does it do?
+
+2.  Why does this code fail?
+
+```{r}
+#table4a %>% 
+#  pivot_longer(c(1999, 2000), names_to = "year", values_to = "cases")
+# variables that are named as numbers need ` ` marks around them
+
+table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+```
+
+# An Observation Contains Multiple Values
+
+We've "fixed" `table2` and `table4`, but what about `table3` where we have a variable called "rate" that appears to give the number of cases over the population size.  Take a look at the table again and notice what type of variable rate is considered.  We want to collect two variable values from the one variable and we can use the `separate()` function to do this.  It will automatically separate compound values wherever it encounters a non-alphanumeric character.  We just need to specify what to call the variables we break the "rate" into.
+
+```{r}
+table3
+
+new_table3 <- separate(data = table3, col = rate, into = c("cases", "population"), sep = '/'); new_table3
+```
+
+You may not have noticed the way courses are code in your degree audit or transcript.  Import the data from the deg_audit.csv file on Canvas and check out help on `separate()` to see if you can take the term variable value and use it to create two new variables: the year the course was taken and the semester with the values "spring", "summer", or "fall".  HINT:  This should take multiple steps.  There are multiple was to do this.  You may want to consider using `mutate()` and/or `ifelse()` and/or `replace()`to get you thinking.
+
+```{r}
+library(readr)
+deg_audit <- read_csv("./deg_audit.csv")
+deg_audit
+
+deg_audit_new <- deg_audit %>% 
+                    separate(col = "Term", into = c("Year", "Term"), sep = 4)
+deg_audit_new
+
+deg_audit_new <- deg_audit_new %>% 
+                    mutate(Term_Name = ifelse(Term == 80, "FALL", "SPRING"))
+deg_audit_new
+```
+
+
+#  Merging Values of Two Variables into One
+
+Suppose you have a data set that contains variables "chapter", "section", "page" and you want to combine these values into a
+new variable called "location"?  Suppose the location will look like:  chapter.section.page
+
+```{r}
+bob <- c("owlbear", "drow", "mimic", "yuan-ti")
+rt <- c(3, 1, 2,8)
+ac <- c(13, 15, 12, 14)
+ch <- c(9, 4, 17, 5)
+pg <- c(82, 31, 215, 42)
+sec <-c(2, 1, 2, 3)
+dnd <- tibble(creature = bob,rating = rt, ac = ac, chapter = ch,page = pg, section = sec); dnd
+
+dnd2 <- (dnd %>% 
+           unite("location", chapter:section))
+dnd2
+
+dnd3 <- (dnd %>% 
+           unite("location", chapter:section, sep = ".", remove = FALSE))
+dnd3
+```
+
+### 12.4.3 Selected Exercises
+1.  What do the `extra` and `fill` arguments do in `separate()`? Experiment with the various options for the following two toy datasets.
+
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"))
+
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"))
+```
+2.  Both `unite()` and `separate()` have a remove argument. What does it do? Why would you set it to FALSE?
+
+#  Missing Data
+
+We are familiar with what we would call *explicitly* missing data, i.e. observations that are blank or "NA".  But there could also be some *implicitly* missing data, i.e. data that you would expect would have been provided but has not been included in the data.
+
+Consider the stocks example from the textbook:
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+
+```
+What is explicitly missing?
+Return for Q4 2015
+
+What is implicitly missing?
+Q1 2016
+
+
+In this case, we can identify the implicitly missing data if we make our values of the year our variables.  So use `pivot_wider()` to create new variables using the year values and let the associated values with year be the return values.  What do you notice now?
+
+```{r}
+stocks
+(stocks %>% pivot_wider(names_from = year, values_from = return))
+```
+Another important tool for making missing values explicit in tidy data is `complete()`.  Check out what it does when applied to stocks when we look at year,quarter pairings:
+
+```{r}
+stocks %>% complete(year, qtr)
+```
+
+
+#  Working with Some More Examples
+
+## The `relig_income` dataset
+
+This dataset explores the relationship between income and religion in the US. It comes from a report produced by the Pew Research Center, an American think-tank that collects data on attitudes to topics ranging from religion to the internet, and produces many reports that contain datasets in this format.
+
+Take a look at the data set.  What are the things we're keeping track of?  What would you say are the variables?  Suppose one of those variables was "count" or "number"?  Can you make this dataset tidy?
+
+```{r}
+relig_income
+
+relig_income2 <- (relig_income %>% 
+                    pivot_longer(2:11, names_to = "income", values_to = "count"))
+relig_income2
+
+```
+
+
+## The Billboard Data Set
+
+For example, the `billboard` dataset records the date a song first entered the billboard top 100. It has variables for artist, track, date.entered, rank and week. The rank in each week after it enters the top 100 is recorded in 75 columns, wk1 to wk75. This form of storage is not tidy, but it is useful for data entry. It reduces duplication since otherwise each song in each week would need its own row, and song metadata like title and artist would need to be repeated.  Go ahead and tidy-up the data by letting it have five variables: artist, track, date.entered, week, and rank.  Hint:  Use `values_drop_na = TRUE`
+
+```{r}
+billboard
+
+bill <- (billboard %>% 
+           pivot_longer(wk1:wk76, names_to = "week", values_to = "rank", values_drop_na = TRUE))
+bill
+```
+
+CHANGE OF PLANS
+Let's find the number of weeks on the charts and top rank and min rank.
+
+```{r}
+summary_bill <- (bill %>% 
+                   group_by(artist, track) %>% 
+                   summarise(total_weeks = n(), 
+                             highest_rank = min(rank), 
+                             lowest_rank = max(rank)) %>%
+                   arrange(desc(total_weeks), highest_rank))
+summary_bill
+```
+
+
+What is the case about the values of "week"?  What can you do if you want these to be integer values?
+
+```{r}
+
+```
+
+What if you'd like to have the actual date corresponding to the given week, rather than the week entered?  For instance, if a song entered on `2022-02-05` and you're looking at its fourth week on the chart, that would correspond to a date of `2022-02-26`.  We could accomplish this calculation by using
+```{r}
+actual_date <- as.Date("2022-02-05") + 21; actual_date
+```
+
+Can you use this to transform your tibble to have the variables: artist, track, week, rank, and date; where date is the date corresponding to the start of that week?  Once you've done this, you can remove the date.entered variable.
+
+```{r}
+
+```
+
+# The Full WHO Tuberculosis Dataset
+
+The `tidyr::who` dataset contains tuberculosis (TB) cases broken down by year, country, age, gender, and diagnosis method.  Take a look at the dataset:
+
+```{r who_tb}
+who
+View(who)
+```
+There's A LOT going on here, and the column names (which should correspond to variables, ideally), do not make much sense.  We can go to the website for help or look in R for help on the who dataset, but for now let's try to simplify things and intuit column headings in a bit.
+
+Let's take the column headings new_sp_m014 all of the way through to the end and make them observations (rows), when there are values they are numbers, so let's assume those are counts.  We can simplify things by discrearding any values that are NA (so use `values_drop_NA = TRUE`).  Note, we can see all of the column titles using the `names()` function.
+

@@ -1,0 +1,247 @@
+---
+title: "Diamond Exploration"
+author: "Graham Swain"
+date: "2/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+attach(diamonds)
+```
+
+#  Some Exploration of the `diamonds` Data Frame
+
+1.  Use the `str()` function (for structure) to learn more about the variables
+for this data frame, and check out help `?diamonds` to learn more about the
+variables.
+
+```{r}
+str(diamonds)
+?diamonds
+```
+
+
+2.  Explore the size of diamonds.  Is there anything interesting that you find?
+Try varying the `binwidth` a good deal.  
+
+```{r}
+ggplot(diamonds) + 
+  geom_histogram(aes(x = carat), binwidth = 1) +
+  ggtitle("Histogram w/bin 1")
+
+ggplot(diamonds) + 
+  geom_histogram(aes(x = carat), binwidth = 0.5) +
+  ggtitle("Histogram w/bin 0.5")
+
+ggplot(diamonds) + 
+  geom_histogram(aes(x = carat), binwidth = 0.25) +
+  ggtitle("Histogram w/bin 0.25")
+
+ggplot(diamonds) + 
+  geom_histogram(aes(x = carat), binwidth = 0.1) +
+  ggtitle("Histogram w/bin 0.1")
+
+ggplot(diamonds) + 
+  geom_bar(aes(x = carat)) +
+  ggtitle("Bar")
+
+# same as the previous bar graph, just cut off to see the data better
+ggplot(diamonds) + 
+  geom_bar(aes(x = carat)) +
+  coord_cartesian(xlim = c(0, 2.5)) +
+  ggtitle("Zoomed in bar")
+
+ggplot(diamonds) + 
+  geom_freqpoly(aes(x = carat), binwidth = .25) +
+  ggtitle("Frequency Polygon")
+
+
+# Looking at the volume of diamonds, cuts off at 420 cm^3 since the graph isn't
+# that interesting beyond that
+diamonds %>% mutate(volume = (x * y * z)) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(x = volume), binwidth = 1) +
+  coord_cartesian(xlim = c(0, 420)) +
+  ggtitle("Count of diamonds by volume")
+```
+  
+It seems that there are a disproportional amount of diamonds with a "nice number" carat. (0.25, 0.5, 1, etc).
+This is likely because of marketing, as selling a 0.97 or a 0.54 carat diamond is kinda weird.
+
+
+3.  Find nice visual ways to tell about the cut, clarity, and size(carat) of 
+the diamonds.  Consider telling stories that combine two or more pieces of this
+information in a meaningful way.
+
+```{r}
+ggplot(diamonds) + 
+  geom_bar(aes(x = cut, fill = clarity), position = "dodge") +
+  ggtitle("Count of Clarity based off Count")
+
+ggplot(diamonds) + 
+  geom_histogram(aes(x = carat, fill = cut), position = "dodge", binwidth = 0.25) +
+  coord_cartesian(xlim = c(0, 2.5)) +
+  ggtitle("Count of Cut based off Carat")
+
+ggplot(diamonds) + 
+  geom_histogram(aes(x = carat, fill = clarity), position = "dodge", binwidth = 0.25) +
+  coord_cartesian(xlim = c(0, 2.5)) +
+  ggtitle("Count of Clarity based off Carat")
+
+ggplot(diamonds) + 
+  geom_hex(aes(x = clarity, y = carat, fill = cut))
+
+ggplot(diamonds) +
+  geom_boxplot(aes(y = carat, x = clarity)) + facet_grid(~cut) +
+  ggtitle("Boxplot view carat by clarity seperated by cut")
+
+# same as above, just flipped
+ggplot(diamonds) +
+  geom_boxplot(aes(x = carat, y = clarity)) + facet_grid(~cut) +
+  ggtitle("Boxplot view carat by clarity seperated by cut")
+
+# might use
+#diamonds %>%
+#  group_by(cut) %>%
+#  summarize(avg_carat = mean(carat, na.rm = TRUE))
+  
+```
+It's a little hard to show all three attributes at once since there are so many different types of clarity.
+
+4.  Explore the distribution of each of the `x`, `y`, and `z` variables in 
+`diamonds`.  What do you learn?  How might you decide which dimension is the 
+length, width, and depth?  Consider how you might visualize a diamond.
+
+```{r}
+ggplot(diamonds) +
+  geom_smooth(aes(x = x, y = y)) +
+  ggtitle("x vs y")
+
+ggplot(diamonds) +
+  geom_smooth(aes(x = x, y = z)) +
+  ggtitle("x vs z")
+
+ggplot(diamonds) +
+  geom_smooth(aes(x = z, y = y)) +
+  ggtitle("z vs y")
+```
+  
+  According to the documentation x is length, y is width, and z is depth. Found using `?diamonds`.  
+It makes sense, it seems that a lot of diamonds are wider than they are deep.  Whereas length has a pretty linear relationship with width and depth.
+
+5.  Explore the distribution of `price`.  Do you discover anything unusual or
+surprising?  Try a wide range of `binwidth` values.
+
+```{r}
+ggplot(diamonds) +
+  geom_point(aes(y = price, x = carat, color = cut))
+
+ggplot(diamonds) +
+  geom_histogram(aes(y = price), binwidth = 1) +
+  ggtitle("binwidth = 1")
+
+ggplot(diamonds) +
+  geom_histogram(aes(y = price), binwidth = 50) +
+  ggtitle("binwidth = 50")
+
+ggplot(diamonds) +
+  geom_histogram(aes(y = price), binwidth = 100) +
+  ggtitle("binwidth = 100")
+
+ggplot(diamonds) +
+  geom_histogram(aes(y = price), binwidth = 250) +
+  ggtitle("binwidth = 250")
+
+ggplot(diamonds) +
+  geom_histogram(aes(y = price), binwidth = 250) +
+  ggtitle("binwidth = 250, zoomed") +
+  coord_cartesian(ylim = c(0, 2500))
+
+ggplot(diamonds) +
+  geom_histogram(aes(y = price), binwidth = 500) +
+  ggtitle("binwidth = 500")
+
+ggplot(diamonds) +
+  geom_histogram(aes(y = price), binwidth = 1000) +
+  ggtitle("binwidth = 1000")
+```
+  
+There seems to be almost none in the \$1500ish (I think) range. It could be because it is pretty expensive, so if someone is willing to spend that much, they would be willing to spend \$1750 or \$2000, so jewelers don't target that price point.
+There are also not that many below $750, so there is kind of a minimum price diamonds start at.  
+Other than that, the distribution seems to be what you would expect, much more cheaper ones and then it quantity declines as price increases.
+
+6.  How many diamonds are 0.99 carat?  How many are 1 carat?  What might be the 
+cause or reason for the difference?
+
+```{r}
+diamonds %>% filter(carat == 0.99 | carat == 1) %>% group_by(carat) %>% summarize(num = n())
+
+diamonds %>%
+  filter(carat == 0.99 | carat == 1) %>%
+  group_by(carat) %>%
+  summarize(count = n()) %>%
+  ggplot() + geom_col(aes(x = carat, y = count))
+
+```
+  
+There are almost no diamonds that are .99 carats and a lot that are 1.0 carats.  
+1 carat is a hurdle jewelers want to get past to better market the diamonds.  
+It is the same reason why you do not see very many 5'10" or 5'11" men on dating apps, but a disproportionate amount of 6'0" tall men.
+
+7.  Compare and contrast `geom_violin()` with a faceted `geom_histogram()` or 
+a colored `geom_freqpoly()`.  What are the pros and cons of each method?
+```{r}
+# added fill just to make it pretty
+ggplot(diamonds) +
+  geom_violin(aes(x = carat, y = cut, fill = cut))
+
+ggplot(diamonds) + 
+  geom_histogram(aes(x = carat, fill = cut), binwidth = 0.25) +
+  facet_grid(~cut)
+
+ggplot(diamonds) +
+  geom_freqpoly(aes(x = carat, color = cut), binwidth = 0.25)
+```
+  
+I think the faceted histogram is the easiest to read, with the freqpoly about equal. I find that it is harder to read what the violin, but that is mostly because I just haven't seen many violin graphs in the past. That being said, I think it is the most visually appealing graph.
+
+
+8.  How does the price distribution of very large diamonds compare to small diamonds?  Is it as you expect, or does it surprise you?
+```{r}
+ggplot(diamonds) +
+  geom_point(aes(x = carat, y = price)) +
+  geom_smooth(aes(x = carat, y = price), se = FALSE, color = "red")
+
+ggplot(diamonds) +
+  geom_point(aes(x = carat, y = price, color = cut)) +
+  geom_smooth(aes(x = carat, y = price), se = FALSE)
+```
+  
+The price seems to increase exponentially as the size increases for the most part, but there are a few of the very large diamonds where the price increases linearly. Which doesn't make sense until we add cut to the graph. A lot of the larger diamonds seem to be of a lower quality cut, which likely explains why they are not as expensive as we might expect.  That being said, there are still some confusing ones, like the 3.5 carat, ideal cut diamond for $12,500. I do not know enough about the diamond market to know why there are cases like that, maybe people just got a good price.
+
+
+9.  Visualize the combined distribution of `cut`, `carat`, and `price`.
+```{r}
+ggplot(diamonds) +
+  geom_point(aes(x = carat, y = price, color = cut))
+
+ggplot(diamonds) +
+  geom_point(aes(x = carat, y = price, color = cut)) +
+  facet_grid(~cut)
+
+ggplot(diamonds) +
+  geom_point(aes(y = carat, x = price, color = cut)) +
+  facet_grid(~cut)
+
+ggplot(diamonds) +
+  geom_smooth(aes(x = carat, y = price, color = cut), se = FALSE)
+```
+  
+I think the smooth graph using fill = cut does the best job of conveying the relationship cleanly.  
+The first geom_point shows it alright, but it is really cluttered and the faceted graphs are too squished to convey anything.

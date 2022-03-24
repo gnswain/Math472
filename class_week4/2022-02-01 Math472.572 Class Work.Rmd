@@ -1,0 +1,170 @@
+---
+title: "2022-02-01 Math472.572 Class"
+author: "R Studio"
+date: "2/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Continuing with [Chapter 5 (eBook) on Transformations](r4ds.had.co.nz/transform.html#transform)
+
+In last week's class we used data about flights out of New York City in 2013
+```{r library}
+library(tidyverse)
+library(nycflights13)
+```
+and talked about transforming data, in particular we discussed:
+- **Sorting** data by <span style="color:red;">observation values</span> using `arrange()`
+- **Rearranging/Removing** <span style="color:blue;">variables</span> using `select()`
+- **Selecting/Removing** <span style="color:red;">observation values</span> using `filter()`
+- **Creating** new  <span style="color:blue;">variables</span> using `mutate()` (or `transmute()`)
+
+We ran out of time for one last item related to sorting ... that is using built in ranking functions, so we'll look at this quickly.
+
+## Ranking
+
+`dplyr()` offers some ranking functions:  `row_number()`, `dense_rank()`, `percent_rank()`, `cume_dist()`.  Explore what these may do with a fairly simple dataframe:
+
+```{r rankplay}
+play <- c(4, 1, NA, 5, 2, 3, 2)
+```
+
+What is the difference between `row_number()` and `dense_rank()`?
+
+```{r}
+play
+row_number(play)   # gives the position (1st to nth) of this element when put 
+                   #   in ascending order
+dense_rank(play)   # gives the position (1st to nth) of this distinct element
+                   #   value when put in ascending order (ties get same value)
+percent_rank(play) # percent of distinct values that are less than this element
+                   #   value
+cume_dist(play)    # percent of (all, so double count repeats) values that are 
+                   #   LESS than or EQUAL to this value
+```
+
+###  Some Excercises from the Text
+
+5.5.2 Exercises
+
+4.  Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for `min_rank()`.
+```{r}
+just_dep_delay <- select(flights, dep_delay)
+head(min_rank(just_dep_delay), 10)
+head(arrange(flights, desc(dep_delay)))
+```
+
+
+5.  What does 1:3 + 1:10 return? Why?
+```{r}
+1:3 + 1:10
+```
+
+
+
+## Using `summarize()`
+
+When we summarize, we will typically generate statistics associated with the data.  Perhaps means, standard deviations, medians, IQR's, minimum values, maximum values, sums, numbers of elements, or numbers of distinct elements for instance.  We'll often be interested in summarizing our data with respect to different key features, and thus we may opt to group our data (conceptually) before applying the `summarize()`
+
+```{r first_grouping}
+flights_by_carrier <- group_by(flights, carrier)
+summarize(flights_by_carrier, avg_dep_delay = mean(dep_delay))
+    # there were some dep_delay with NA. Arithemetic with NA often gives NA.
+
+# Ignoring the NA's, in the mean, add option "na.rm = TRUE"
+carrier_delays <- summarize(flights_by_carrier, avg_dep_delay = mean(dep_delay, na.rm = TRUE))
+
+# Let's arrange it from largest delay to smallest delay (worst to best)
+arrange(carrier_delays, desc(avg_dep_delay))
+```
+```{r}
+# Suppose we only want to consider the positive delays (no negatives to counter balance?)
+flights %>% group_by(carrier) %>% filter(dep_delay >= 0) %>% summarize(avg_dep_delay = mean(dep_delay)) %>% arrange(desc(avg_dep_delay))
+```
+
+
+Suppose you want to get an idea of the performance of each carrier in terms of the average delay in departure time?  First we want to group our flights dataset by carrier.  What is the output of this command?  NOTE:  We can only group by <span style="color:blue">variable</span>, not observation values.
+
+
+#### Some Exercises from the 
+[Text](https://r4ds.had.co.nz/transform.html#exercises-12)
+
+4.  Look at the number of cancelled flights per day. Is there a pattern? 
+Is the proportion of cancelled flights related to the average delay?
+
+```{r}
+nrow(filter(flights, is.na(air_time)))
+
+cancelled <- group_by(flights, day, month, year) %>% summarize(num_cancelled = sum(is.na(air_time)), avg_delay = mean(dep_delay, na.rm = TRUE)) %>% arrange(year, month, day)
+
+ggplot(data = cancelled) +
+  geom_point(mapping = aes(x = num_cancelled, y = avg_delay, color = month)) +
+  geom_smooth(mapping = aes(x = num_cancelled, y = avg_delay))
+```
+
+4(special)  Dr. McNelis wants to know if you can find a relatively simple 
+way to determine the number of "NA" entries for the following variables of 
+our flights data: dep_time, dep_delay, arr_time, arr_delay, tail_num, 
+air_time  (or of all variables in flights if that is faster).  Feel free 
+to Google as well.  Is there anything you find that is interesting or 
+curious? 
+
+```{r}
+nrow(filter(flights, is.na(dep_time)))
+nrow(filter(flights, is.na(dep_delay)))
+nrow(filter(flights, is.na(arr_time)))
+nrow(filter(flights, is.na(arr_delay)))
+nrow(filter(flights, is.na(tailnum)))
+nrow(filter(flights, is.na(air_time)))
+```
+
+
+5.  You've looked at which carrier has the worst delays. Challenge: can 
+you disentangle the effects of bad airports vs. bad carriers? Why/why not? 
+(Hint: think about `flights %>% group_by(carrier, dest) %>% 
+summarise(n())`)
+
+```{r}
+(amount_delays <- flights %>% group_by(carrier, origin) %>% summarise(count = n()))
+
+ggplot(data = amount_delays) +
+  geom_bin2d(mapping = aes(x = carrier, y = origin, fill = count))
+```
+
+
+#### Putting things together, more exercises from the 
+[text](https://r4ds.had.co.nz/transform.html#exercises-13)
+
+3.  What time of day should you fly if you want to avoid delays as much as 
+possible?
+
+```{r}
+delay_by_hour <- group_by(flights, sched_dep_time) %>% summarize(avg_delay = mean(dep_delay, na.rm = TRUE))
+
+arrange(delay_by_hour, avg_delay)
+
+ggplot(delay_by_hour) +
+  geom_point(mapping = aes(x = sched_dep_time, y = avg_delay), color = "cyan") +
+  geom_smooth(mapping = aes(x = sched_dep_time, y = avg_delay))
+```
+
+
+4.  For each destination, compute the total minutes of delay. For each 
+flight, compute the proportion of the total delay for its destination.
+
+7.  Find all destinations that are flown by at least two carriers. Use 
+that information to rank the carriers.
+
+8.  For each plane (i.e. tail number), count the number of flights before 
+the first delay of greater than 1 hour.
+
+#  Exploratory Data Analysis
+Putting it all together.  You're going to be working with a new data set 
+and from it you'll want to explore the data, try to ask questions about 
+your data, search for answers using the tools in your toolbox now.  As you 
+do this, can you refine your questions?
+
+How might you start?  Try asking yourself:

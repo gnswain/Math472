@@ -1,0 +1,372 @@
+---
+title: "2022-03-22 Programming in R"
+author: "Erin McNelis"
+date: "3/22/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# More with Functions
+
+Last week we introduced creating our own functions in R, and we discussed conditional statements (`if ( ) {} else if {} else {}` ).  Let's start with a short exercise.
+
+Exercise:  Create a function in R that takes in a number, call it x, and determines if its is even, odd, or neither (note, 2.3 is neither even nor odd.)  Then test your function on several different inputs, including NA.
+
+```{r}
+even_odd <- function (x) {
+  if (x %% 1 != 0 || is.na(x)) {
+    "Neither"
+  } else if (x %% 2 == 0) {
+    "Even"
+  } else {
+    "Odd"
+  }
+}
+
+even_odd(10)
+even_odd(15)
+even_odd(2.3)
+even_odd(NA)
+even_odd(0)
+even_odd(pi)
+```
+
+## Passing Optional Arguments and Error Checking
+
+Remember our (long) function from last week where we determined the grade associated with a numeric average.  This time we're doing to ignore the +/- option, but we will take into consideration if we need to use undergraduate or graduate options.  As most students are undergradutes, let's let that be our default case.  How do we do that?  We can pass an OPTIONAL argument to our function.  Assume that grades are on a 10 point scale.  Check it out:
+
+```{r}
+
+assign_grade <- function (x , undergrad = TRUE) {
+  if (x >= 90){
+    "A"
+  } else if ( x >= 80 ){
+    "B"
+  } else if ( x >= 70 ){
+    "C"
+  } else if ( undergrad & (x >= 60)){
+    "D"
+  } else {
+    "F"
+  }
+  
+}
+  
+assign_grade(68)
+
+assign_grade(68, undergrad = FALSE)
+
+assign_grade(68, FALSE)
+```
+Here's an example from out textbook.  Developing new functions for weighted means, variances and standard deviations.
+
+```{r}
+wt_mean <- function(x, w) {
+  sum(x * w) / sum(w)
+}
+wt_var <- function(x, w) {
+  mu <- wt_mean(x, w)
+  sum(w * (x - mu) ^ 2) / sum(w)
+}
+wt_sd <- function(x, w) {
+  sqrt(wt_var(x, w))
+}
+```
+Test these out to see how things work:
+
+```{r}
+# generate 20 random values from the uniform distribution from 5 to 17
+x <- runif(20, 5, 17)
+x
+
+wt_mean(x, 1:20)
+wt_mean(x, 20:1)
+
+wt_mean(x, 1:4)
+
+(bob <- sample(c(-1:3, NA), 8, replace = TRUE))
+
+wt_mean(bob, 1:4)
+```
+
+What if you have a vector of weights that is not the same length as your vector of values?
+
+```{r}
+
+```
+
+
+How do these functions work with the following vector of values:
+
+```{r}
+myvals <- sample(c(1:20, rep(NA,5)), 20)
+weights <- 0.05
+
+```
+
+Consider the following improvement:
+
+```{r}
+wt_mean <- function(x, w, na.rm = FALSE) {
+  if (!is.logical(na.rm)) {
+    stop("`na.rm` must be logical")
+  }
+  if (length(na.rm) != 1) {
+    stop("`na.rm` must be length 1")
+  }
+  if (length(x) != length(w)) {
+    stop("`x` and `w` must be the same length", call. = FALSE)
+  }
+  
+  if (na.rm) {
+    miss <- is.na(x) | is.na(w) # identify where either x or w has NA values
+    # takes out values where x or w has a NA
+    x <- x[!miss]
+    w <- w[!miss]
+  }
+  sum(w * x) / sum(w)
+}
+```
+
+##  Writing Pipeable Functions with invisible()
+
+Suppose you want to make a function that prints out a value based on your tibble or data frame, but you'd like to make it "pipeable" (i.e. it returns the same data frame or an altered data frame).  
+
+```{r}
+library(tidyverse)
+# suppose you want to count the number of NA's in a dataframe and allow to be part of a piping sequence
+count_na <- function(df) {
+  num_nas <- sum(is.na(df))
+  print(paste("There are", num_nas, "NAs in your data frame."))
+  invisible(df)
+}
+
+barry <- tibble(
+  sue = c(NA, 3, NA, 5),
+  don = c("Harry", NA, "Sally", "Bob")
+)
+
+count_na(barry)
+
+barry %>%
+  count_na() %>%
+  filter(na.rm = FALltlt%>%r())
+  count_na()
+```
+
+
+Note, we are skipping the short section on handling an unspecified number of inputs using the dot-dot-dot.  Please check this out.  <https://r4ds.had.co.nz/functions.html#dot-dot-dot>
+
+# Vectors in R
+
+We're going to briefly cover concepts in the chapter on Vectors in R.  It's important to know that there are two types of vectors:
+
+1.  **Atomic vectors**, of which there are six types: logical, integer, double, character, complex, and raw. Integer and double vectors are collectively known as numeric vectors.
+
+2.  **Lists**, which are sometimes called *recursive vectors* because lists can contain other lists.  Let's check out the diagram describing these:
+
+<https://r4ds.had.co.nz/vectors.html#vector-basics>
+
+## Naming and Subsetting Vectors
+
+We talked about this some when we talked about tibbles, but it's worth revisiting again.
+
+```{r cars}
+# Vectors can have names;
+b <- c(stephen = 8, kaleigh = 15, kelly = 27)
+b
+
+h <- c(3, 7, 11); h
+names(h) <- c("Game1", "Game2", "Game3"); h
+
+x <- c("one", "two", NA, "four", "five", NA, "seven")
+
+#  Referencing specific entries of x
+x[1]
+x[3]
+
+x[2:4]
+
+x[c(1, 3, 4)]
+
+x[-c(3,6)] # what not to list
+x[c(-3, -6)] # what not to list
+
+# what's not NA
+x[!is.na(x)]
+
+h['Game1']
+
+#  Giving a concatenated string of entries to reference
+
+
+#  What entries NOT to list
+
+
+#  What's not NA
+
+
+(y <- sample(c(1:5, rep(NA,2)), 6, replace=TRUE))
+
+#  The odd values in y
+y[y %% 2 == 1 & !is.na(y)]
+
+#  The odd indices from y
+y[seq_along(y) %% 2 == 1]
+
+z <- c(age = 31, year = 1990, classes = 5)
+
+#  By name
+z['age']
+
+bob <- tibble(
+  smpl = 1:5,
+  heads = sample(0:5, 5, replace = TRUE),
+  rolls = sample(1:6, 5, replace = TRUE)
+)
+
+bob[2]
+bob[[2]]
+
+b[2]
+b[[2]]
+
+
+
+```
+
+
+Some practice exercises:
+
+1. Create functions that take a vector as input and returns:
+a.  The last value. Should you use [ or [[?
+b.  The elements at even numbered positions.
+c,  Every element except the last value.
+
+```{r}
+last_value <- function(x) {
+  x[[length(x)]]
+}
+
+even_index <- function(x) {
+  unlist(x[seq_along(y) %% 2 == 0])
+}
+
+all_but_last <- function(x) {
+  x[-length(x)]
+}
+
+g <- c(1, 2, 3, 4, NA, 6, 7, NA, 9)
+
+last_value(g)
+even_index(g)
+all_but_last(g)
+```
+
+
+2.   What happens when you subset with a positive integer that’s bigger than the length of the vector? What happens when you subset with a name that doesn’t exist?
+
+
+##  A Little about Lists
+
+```{r}
+w <- list(c("one", "two", "three"), c(1, 3, 5), TRUE, list(c(1:3)))
+w
+
+w[1]
+w[[1]]
+w[[1]][2]
+```
+
+
+#  Iteration (Looping and More!)
+
+##  FOR Loops and the Importance of Preallocating Your Output Vectors
+
+Let's consider wanting to find the standard deviations for each variable/column in a vector:
+
+```{r}
+df <- tibble(
+  a = rnorm(10),
+  b = rnorm(10),
+  c = rnorm(10),
+  d = rnorm(10)
+)
+
+```
+
+Code suggested in our textbook.  Let's see if we can figure out what it's doing.
+
+```{r}
+
+output <- vector("double", ncol(df))  
+for (i in seq_along(df)) {            
+  output[[i]] <- median(df[[i]])      
+}
+output
+
+```
+
+Now that you're pros (yeah!) let's try some exercises:
+
+1.  Write for loops to:
+  a.  Compute the mean of every column in mtcars.
+  b.  Determine the type of each column in nycflights13::flights.
+  c.  Compute the number of unique values in each column of iris.
+  d.  Generate 10 random normals from distributions with means of -10, 0, 10, and 100.
+Think about the output, sequence, and body before you start writing the loop.
+
+2.  Convert the song “99 bottles of beer on the wall” to a function. Generalise to any number of any vessel containing any liquid on any surface.
+
+```{r}
+# 1a
+mt_output <- vector("double", ncol(mtcars))  
+for (i in seq_along(mtcars)) {            
+  mt_output[[i]] <- median(mtcars[[i]])      
+}
+mt_output
+
+# 1b
+flights <- nycflights13::flights
+types <- vector("character", ncol(flights))
+for (i in seq_along(flights)) {
+  types[[i]] <- typeof(flights[[i]])
+}
+types
+
+# 1c
+unique_num <- vector("integer", ncol(iris))
+for (i in seq_along(iris)) {
+  unique_num[i] <- as.integer(count(unique(iris[i])))
+}
+unique_num
+
+# 1d
+
+
+# 2
+song <- function(n = 99, vessel = "bottles", liquid = "beer", surface = "wall") {
+  for (i in n:1) {
+    print(paste(i, vessel, "of", liquid, "on the", surface, ",", i, vessel, "of", liquid))
+    print(paste("Take one down and pass it around,", i - 1, vessel, "of", liquid, "on the", surface))
+  }
+}
+
+song()
+
+```
+
+
+##  Different Ways to Loop / Things to Loop Over
+
+```{r}
+# looping over names for a data frame
+stuff <- vector("integer", ncol(mtcars))
+for (nm in names(mtcars)) {
+  cat("Variable ", nm, " has median of ", median(mtcars[[nm]]), ".\n", sep = "")
+}
+```
+
