@@ -1,0 +1,125 @@
+---
+title: "2022-04-05 Math 472/572 - Models in R"
+author: "Your Name Here"
+date: "4/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Review of a Simple Linear Model
+Recall using the `modelr` library data sets at the end of last weeks'
+class.  We ended up "deriving" the best fit linear model for the data
+in `sim1` by narrowing down our a0 and a1 coefficients of y = a0 + a1*x
+and using the `optim` function:
+
+```{r}
+dist_rms <- function ( v1, v2 ){
+  if ( length(v1) != length(v2) ){
+    stop("The length of your two vectors should be the same.")
+  }
+  #  If vectors contain NA's, warn the user that 
+  #  they will be ignored.
+  if (sum(is.na(v1)) + sum(is.na(v2)) > 0 ) {
+    warning("You have NA values in your data.  They will be ignored.")
+  }
+
+find_y_line <- function (param, x) {
+  yvals <- vector("double", length(x))
+  # for (i in seq_along(x)){
+  #   yvals[i] <- param[1] + param[2]*x[[i]]
+  # }
+  
+  #  assume a0 = param[1], a1 = param[2]
+  yvals <- param[1] + param[2]*x
+  }
+  
+calc_rms <- function( params , df ){
+  yhat <- find_y_line( params, df$x )
+  rms <- dist_rms(yhat, df$y)
+  rms
+}
+best <- optim(c(0, 0), calc_rms, df = sim1)
+best$par
+
+ggplot(sim1, aes(x, y)) + 
+  geom_point(size = 2, colour = "grey30") + 
+  geom_abline(intercept = best$par[1], slope = best$par[2])
+
+lm_ans <- lm( y ~ x, data = sim1 )
+best_params <- coef(lm_ans)
+
+ggplot(sim1, aes(x,y)) + geom_point() + 
+  geom_abline(intercept = best_params[[1]], slope = best_params[[2]])
+```
+
+You are to try a different form of "error" rather than the root-mean-square
+error we used.  In particular, try using the maximum absolute error and then
+the three-norm error, i.e. 
+\begin{equation*}
+\frac{\sqrt[3]{\sum_{i=1}^n(y_i - \hat{y}_i)^3}}{n}
+\end{equation*}
+
+
+# Visualizing the Appropriateness of a Model
+
+We'll try looking at models and visualizing them (what they capture and what
+they lose) -- namely their predictions and their residuals.  We'll also break
+up our examples by the number of variables involved (we're going to assume
+today that our dependent/response variable is numerical) and the type of
+variables these are.  For all of our models, we'll use the `lm()`, linear model,
+function in R to determine the coefficients associated with our model.
+
+### Case 1: One numerical independent/predictor variable
+
+Recall the `sim1` data set from the last class (and our) intro exercise.
+
+
+Some common steps we'll be taking:
+1)  Generate the model using `lm()`.
+
+
+An ASIDE about the **Formula**, `y~x` and its meaning in R.
+
+
+Now we want to see 
+
+## Visualizing the Fit
+
+## Visualizing the Residual
+
+# Formulas (i.e. y ~ x) and Models from `lm()`
+
+## Single Numerical Independent/Predictor Variable
+
+## Single Categorical Independent/Predictor Variable
+
+## Two Independent/Predictor Variables; One Numerical and One Categorical
+
+## Two Numerical Independent/Predictor Variables
+
+## More Non-Linear Models using Transformations
+
+
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

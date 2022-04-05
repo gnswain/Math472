@@ -1,0 +1,448 @@
+---
+title: "2022-03-29 Math 472/572"
+author: "Erin McNelis"
+date: "3/29/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## A Quick Review of Coding and Functions in R
+
+*Exercise*:  Create a function called dist_inf in R that takes in two vectors of numerical values, v1 and v2, and returns the maximum absolute of the difference of the vectors, i.e. max( |v1[[i]] - v2[[i]]|).  Your function should check that vectors v1 and v2 are the same length and should ignore NA values in the vectors when making this calculation.
+
+```{r}
+dist_inf <- function(v1, v2) {
+  if (length(v1) != length(v2)) {
+    stop("The vectors should be of equal length.")
+  }
+  # If vectors contain NA's, warn the user that they will be ignored
+  
+  if (sum(is.na(v1)) + sum(is.na(v2)) > 0) {
+    warning("You have NA's in your data. They will be ignored.")
+  }
+  
+  max(abs(v1 - v2), na.rm = TRUE)
+}
+
+#  Use the following to test your dist_inf function
+
+(x <- sample(1:10,10,replace=TRUE))
+(y <- sample(1:10,10,replace=TRUE))
+
+dist_inf(x,y)
+
+(w <- sample(c(1:10,NA),10,replace = TRUE))
+(z <- sample(c(1:10,NA),10,replace = TRUE))
+
+dist_inf(w,z)
+
+(p <- sample(c(-5:5,NA),12,replace = TRUE))
+(q <- sample(c(-8:12,NA),4,replace = TRUE))
+
+dist_inf(p,q)
+```
+
+*Exercise*:  Now create a function called dist_rms in R that takes in two vectors of numerical values, v1 and v2, and returns the root mean square of the differences, i.e.
+$$
+\sqrt{ \frac{\sum_{i=1}^{n} {(v1(i) - v2(i))^2}}{n} }
+$$
+\begin{equation}
+rms = \sqrt{ \frac{\sum_{i=1}^{n} (v1(i) - v2(i))^2}}{n} }
+\end{equation}
+where $n$ is the number of observations in v1.  Again, your function should check that vectors v1 and v2 are the same length and should ignore NA values in the vectors when making this calculation.
+
+```{r}
+dist_rms <- function (v1, v2) {
+  if (length(v1) != length(v2)) {
+    stop("The vectors should be of equal length.")
+  }
+  # If vectors contain NA's, warn the user that they will be ignored
+  
+  if (sum(is.na(v1)) + sum(is.na(v2)) > 0) {
+    warning("You have NA's in your data. They will be ignored.")
+  }
+  
+  sqrt((sum(v1 - v2, na.rm = TRUE) ^ 2) / length(v1))
+}
+
+#  Use the following to test your dist_rms function
+
+(x <- sample(1:10,10,replace=TRUE))
+(y <- sample(1:10,10,replace=TRUE))
+
+dist_rms(x,y)
+
+(w <- sample(c(1:10,NA),10,replace = TRUE))
+(z <- sample(c(1:10,NA),10,replace = TRUE))
+
+dist_rms(w,z)
+
+(p <- sample(c(-5:5,NA),12,replace = TRUE))
+(q <- sample(c(-8:12,NA),4,replace = TRUE))
+
+dist_rms(p,q)
+```
+
+
+*Exercise*:  You're given a fake data set, called fake_data, and a set of guesses to approximate the equation of the line in the fake data.  You are to create a function called calc_inf_errs that takes in a data frame whose columns contain approximations to the y variable in fake_data and outputs a vector of associated error values for each column, using the dist_inf error function you created. 
+
+```{r}
+fake_data <- tibble(
+  x = 1:20,
+  #  a randomly generated linear function plus noise
+  y = rnorm(1,mean = 5, sd = 4) * x 
+      - rnorm(1, mean = 6, sd = 2) + 5*rnorm(length(x))
+)
+
+p <- ggplot(fake_data) + geom_point(aes(x,y))
+p
+
+guesses <- tibble(
+  approx1 = 5 * fake_data$x - 6,
+  approx2 = 3 * fake_data$x - 4,
+  approx3 = 5 * fake_data$x - 8,
+  approx4 = 7 * fake_data$x - 7
+)
+
+#  Strictly for visualizing how our random guesses at
+#  fitting the data are
+m <- c(5,3, 5, 7)
+b <- c(-6, -4, -8, -7)
+
+p + geom_abline(intercept = b, slope = m,col = rainbow(4))
+
+#  Give the code for your calc_inf_errs here
+calc_inf_errs <- function(df) {
+  errs <- vector(mode = "double", length = ncol(df))
+  for(i in seq_along(df)) {
+    errs[i] <- dist_inf(fake_data$y, df[[i]])
+  }
+  
+  errs
+}
+
+
+#  Test out your code now
+(myerrs <- calc_inf_errs( guesses ))
+```
+
+##  Passing Functions to Functions
+
+Notice we could have opted to use different types of "error" functions in our calc_errs (e.g. our dist_inf, our dist_rms, or any other function we want to use that returns a numerical result).  We don't have to make a different function for each type of error we calculate, we can pass that to our function as well.
+
+```{r}
+#  Creating a calc_errs function that allows you to pass what
+#  function you want to use to calculate the errors
+
+calc_errs <- function ( df , fun ){
+
+  
+}
+```
+
+We can even define our error function as we pass it into our calc_errs function:
+
+```{r}
+
+calc_errs( guesses, dist_rms )
+calc_errs( guesses, function (v1,v2) { (sum((v1 - v2)^4))^(1/4)} )
+
+```
+
+## The map functions
+
+Essentially, we've just created functions that apply a function to a data frame using for loops and passing functions.  R has some built in functions that do this for you.  Go ahead and check out help on `apply()`, `lapply()` and `map()`.  We will typically use a `map_*()` function of some sort from the `purrr` library.
+
+```{r}
+#  Consider the data frame, mtcars, which contained only numerical values.  Try using apply() and map() to find means, standard deviations, and quantiles for each column of mtcars
+
+str(mtcars)
+
+apply(mtcars, 2, mean)
+map(mtcars, mean)
+
+#  What is the difference between map(mtcars,mean) and map_dbl(mtcars,mean)?  What about between map(mtcars,quantile) and map_dbl(mtcars,quantile)
+map(mtcars, mean)
+map_dbl(mtcars, mean)
+
+map(mtcars, quantile)
+
+# map_dbl does not work for quantile
+#map_dbl(mtcars, quantile)
+
+#  Now switch to our `mpg` data set.  Not all of the variables were numeric here.  Since we can pipe to the map_* functions, see if you can find the mean of each numerical variable in mpg.
+
+str(mpg)
+
+mpg %>%
+  select_if(is.numeric) %>%
+  na.omit %>%
+  map(mean)
+```
+## Some Other Nice Uses of Map and Short Cuts
+
+We'll return to the mtcars data frame for the next set of examples.  As we did in our warm-up examples, we can map a function that takes a data frame as input too.  Consider the following:
+
+```{r}
+models <- mtcars %>% 
+  split(.$cyl) %>% 
+  map(function(df) lm(mpg ~ wt, data = df))
+
+models
+#  Question, could we have used a different map_* function rather than map here?  Why or why not?
+
+# We had to use map. The output of lm is not a single double, single integer, or a single string. It
+# works to have it in a list.
+```
+We've passed what is called an anonymous function to the `map` funciton here, by defining it inline.  Check out this other possibility.  What is the difference, and what does the "." mean?
+```{r}
+models <- mtcars %>% 
+  split(.$cyl) %>% 
+  map(~lm(mpg ~ wt, data = .))
+models
+```
+Note, the `lm` returns an object of class "lm".
+
+The functions `summary` and `anova` are used to obtain and print a summary and analysis of variance table of the results. The generic accessor functions `coefficients`, `effects`, `fitted.values` and `residuals` extract various useful features of the value returned by `lm.`
+
+We can apply map to these functions too:
+
+```{r}
+#  Check out what a summary of an output from lm may look like
+summary(models[["6"]])
+
+
+#  Now see how you may apply the map functions for more specific information.
+
+models %>% 
+  map(summary) %>% 
+  map_dbl(~.$r.squared)
+
+#  or using the name of the desired component
+models %>% 
+  map(summary) %>% 
+  map_dbl("r.squared")
+
+```
+
+## Some More Exercises to try:
+
+1. Write code that uses one of the map functions to:
+
+a.  Compute the mean of every column in `mtcars.`
+b.  Determine the type of each column in `nycflights13::flights`.
+c.  Compute the number of unique values in each column of `iris.`
+d.  Generate 10 random normals from distributions with means of -10, 0, 10, and 100.
+
+2.  What happens when you use the map functions on vectors that aren’t lists? What does `map(1:5, runif)` do? Why?
+```{r}
+# 1a
+map(mtcars, mean)
+
+# 1b
+map(nycflights13::flights, typeof)
+map_chr(nycflights13::flights, typeof)
+
+# 1c
+iris %>%
+  map(unique) %>% 
+  map_int(length)
+
+# 1d
+map(c(-10, 0, 10, 100), rnorm, n = 10)
+
+# 2
+map(1:5, runif)
+```
+
+
+
+## Mapping Over Multiple Arguments
+
+Suppose you wanted to create randomly generated data sets from a normal distribution with various means and standard deviations, and these means and standard deviations are stored in vectors.
+
+```{r}
+#  What if you have the same number of means, mu,  and standard deviations, sigma, and they're to be taken pairwise as (mu(i). sigma(i))
+
+mu <- seq(from = 4, to = 6, by = 0.5)
+sigma <- seq(2,1,-0.25)
+
+#  Create a data frame with 5 random variables from a normal distribution for each of these mean, std dev pairs using map2
+#  Note the variable inputs are given first, then the function followed by any fixed parameters.
+map2(mu, sigma, rnorm, n = 5)
+
+
+#  What if you wanted all possible mu and sigma combinations?
+#  We can use the `expand.grid()` function to help
+
+(ms <- expand.grid(mu = mu,sigma = sigma))
+
+expand.grid(age = c(18, 19, 20, 21),
+            major = c("math", "cs", "chem"),
+            class = c("undergrad", "grad"))
+(df2 <- map2(ms$mu, ms$sigma, rnorm, n=10))
+```
+
+#  Introduction to Models
+
+The focus of this class is more on Exploratory Data Analysis than on models, but a portion of our studies will focus on models.  In particular, we'll use models to try to capture the true patterns or "signals" in the data.  We'll also use models to make predictions or inferences.  We will not talk about assessing how good a model is quantitatively, but we will consider qualitative and instinctive notions of how good a model is.
+
+Before we get to making predictions or inferences, let's consider some simple models using the data sets that come with the `modelr` library.
+
+```{r}
+library(modelr)
+options(na.action = na.warn)
+
+glimpse(sim1)
+
+#  Go ahead and make a scatter plot of this data
+p <- (sim1 %>%
+        ggplot() +
+        geom_point(aes(x, y)))
+
+p + geom_abline(slope = 2, intercept = 5)
+```
+
+The data looks pretty darn linear.  Thus, we'll try to discover what best linear model of the form y = a_0 + a_1 x best "fits" this data (and we'll discuss how we want to quantify "fit").
+
+First, we'll generate a random set of lines (i.e. a random set of a_0, a_1 pairs) to see how well they appear to fit, visually.
+
+```{r}
+model_params <- tibble(
+  a0 = runif(250, -20, 40),
+  a1 = runif(250, -5, 5)
+)
+
+ggplot(sim1, aes(x, y)) + 
+  geom_abline(aes(intercept = a0, slope = a1), 
+              data = model_params, alpha = 1/4) +
+  geom_point() 
+```
+What do we mean by the "fit" and how can we try to quantify our "error"?
+
+```{r}
+my_model <- function ( x ) { 2.5 * x + 1 }
+jitter_x <- sim1$x + runif(min = -0.75 , max = 0.75 , n = length(x))
+
+ggplot(sim1, aes(jitter_x, y, ymax = y,
+                 ymin = my_model(jitter_x))) +
+    geom_pointrange(color = "red") +
+    geom_abline(intercept = 1, slope = 2.5, color = "blue")
+
+```
+
+##  Creating Some Helpful Functions
+
+First, let's create a function that given a set of parameters a0 and a1 in a vector and a vector of x values, the function will output the y values associated with the function
+y = a0 + a1 * x
+
+```{r}
+find_y_line <- function(param, x) {
+  yvals <- vector("double", length(x))
+  
+#  for (i in seq_along(x)) {
+#    yvals[i] <- param[1] + param[2] * x[[i]]
+#  }
+  
+  # assume a0 = param[1], a1 = param[2] 
+  yvals <- param[1] + param[2] * x
+}
+
+x <- 1:10
+y <- find_y_line(c(2, -1/2), x)
+
+plot(x, y)
+```
+
+Now that you have this, we want to create a function, calc_rms, that will quantify our fit.  Let's use the root mean square distance as we did earlier, but now we'll use different inputs to our function.  We'll input two items: 1) a vector of model parameters (assumed to be of the form c(a0, a1)), and 2) the data (which is assumed to have two columns, one for the x values and one labelled "y" for the y values.)  This function should calculate the yhat values on the line with the parameters a0 and a1, then calculate the root mean square of the difference between the y and yhat values.
+
+```{r}
+calc_rms <- function( params, df) {
+  yhat <- find_y_line(params, df$x)
+  rms <- dist_rms(yhat, df$y)
+  rms
+}
+
+# checking the erro on our guess, y = 5 + 2x
+(myrms <- calc_rms(c(5, 2), sim1))
+```
+
+Now, let's make a function called `sim1_distance` that take an input of a0 and a1 values, and outputs the root mean square value of (y - yhat) for yhat = a0 + a1 * sim1$x.
+
+```{r}
+sim1_distance <- function (a0, a1) {
+  calc_rms( c(a0, a1), sim1)
+}
+```
+
+Lastly, use `map_dbl` and piping to add a third column to our `model_params` data frame.  This third column should be called rms and should contain values generated by mapping the `sim1_distance` function to the a0 and a1 columns of model_params.
+
+```{r}
+model_params <- (model_params %>%
+                   mutate(err = map2_dbl(a0, a1, sim1_distance)))
+```
+
+Now that you know how well each model performs, go ahead and add graphs (using geom_abline()) of the 10 best fitting models to our scatter plot, and color the lines based on their rms value.
+
+```{r}
+base_graph <- (sim1 %>%
+                 ggplot(aes(x,y)) +
+                 geom_point())
+
+base_graph +
+  geom_abline(aes(intercept = a0, slope = a1, color = -err), 
+              data = filter(model_params, rank(err) <= 10))
+```
+
+Rather than looking at the (x, y) points and visualizing the fit, we can consider another scatter plot.  Suppose the a0 and a1 are our variables and we want to color them based on their rms values.  We are working in the parameter space now.  Highlight the ten best (a0, a1) values in red.
+
+```{r}
+
+ggplot(model_params, aes(a0, a1)) +
+  geom_point(data = filter(model_params, rank(dist) <= 10), size = 4, colour = "red") +
+  geom_point(aes(colour = dist))
+
+```
+
+Seeing what region of the a0-a1 plane has the best fit, try refining our model by taking a grid of (a0, a1) values and determing the rms values associated with these new pairs.
+
+```{r}
+grid <- expand.grid(
+  a0 = seq(??, ??, length = 25),
+  a1 = seq(??, ??, length = 25)
+  ) %>% 
+  mutate(dist = map2_dbl(a0, a1, sim1_dist))
+
+grid %>% 
+  ggplot(aes(a0, a1)) +
+  geom_point(data = filter(grid, rank(dist) <= 10), size = 4, colour = "red") +
+  geom_point(aes(colour = dist)) 
+```
+
+We can overlay the ten best models from our parameter space and see how their corresponding lines look when plotted on our sims1 data
+
+```{r}
+ggplot(sim1, aes(x, y)) + 
+  geom_point(size = 2, colour = "grey30") + 
+  geom_abline(
+    aes(intercept = a0, slope = a1, colour = dist), 
+    data = filter(grid, rank(dist) <= 10)
+  )
+```
+
+Rather than continuing this refining of a grid process, we can let R use its optimization function, which can find the a0, a1 values that minimize our rms
+
+```{r}
+best <- optim(c(0, 0), calc_rms, data = sim1)
+best$par
+
+
+ggplot(sim1, aes(x, y)) + 
+  geom_point(size = 2, colour = "grey30") + 
+  geom_abline(intercept = best$par[1], slope = best$par[2])
+```
+
