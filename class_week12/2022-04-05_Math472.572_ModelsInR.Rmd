@@ -10,6 +10,20 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+Before we start, we'll look at a question related to the homework. How `pairs` work:
+
+```{r}
+df <- tibble(
+  x = rnorm(20, mean = 60, sd = 8),
+  y = rnorm(20, mean = 15, sd = 10),
+  z = x + 3 * y - 5,
+  w = sin(x + y)
+)
+
+pairs(df)
+```
+
+
 # Review of a Simple Linear Model
 Recall using the `modelr` library data sets at the end of last weeks'
 class.  We ended up "deriving" the best fit linear model for the data
@@ -17,8 +31,9 @@ in `sim1` by narrowing down our a0 and a1 coefficients of y = a0 + a1*x
 and using the `optim` function:
 
 ```{r}
-dist_rms <- function ( v1, v2 ){
-  if ( length(v1) != length(v2) ){
+library(modelr)
+dist_rms <- function ( v1, v2 ) {
+  if ( length(v1) != length(v2) ) {
     stop("The length of your two vectors should be the same.")
   }
   #  If vectors contain NA's, warn the user that 
@@ -26,6 +41,9 @@ dist_rms <- function ( v1, v2 ){
   if (sum(is.na(v1)) + sum(is.na(v2)) > 0 ) {
     warning("You have NA values in your data.  They will be ignored.")
   }
+  
+  sqrt(mean((v1 - v2) ^ 2, na.rm = TRUE))
+}
 
 find_y_line <- function (param, x) {
   yvals <- vector("double", length(x))
@@ -35,7 +53,7 @@ find_y_line <- function (param, x) {
   
   #  assume a0 = param[1], a1 = param[2]
   yvals <- param[1] + param[2]*x
-  }
+}
   
 calc_rms <- function( params , df ){
   yhat <- find_y_line( params, df$x )
@@ -51,6 +69,7 @@ ggplot(sim1, aes(x, y)) +
 
 lm_ans <- lm( y ~ x, data = sim1 )
 best_params <- coef(lm_ans)
+best_params
 
 ggplot(sim1, aes(x,y)) + geom_point() + 
   geom_abline(intercept = best_params[[1]], slope = best_params[[2]])
@@ -59,9 +78,33 @@ ggplot(sim1, aes(x,y)) + geom_point() +
 You are to try a different form of "error" rather than the root-mean-square
 error we used.  In particular, try using the maximum absolute error and then
 the three-norm error, i.e. 
-\begin{equation*}
+$$
 \frac{\sqrt[3]{\sum_{i=1}^n(y_i - \hat{y}_i)^3}}{n}
-\end{equation*}
+$$
+
+
+```{r}
+calc_max <- function(params, df) {
+  yhat <- find_y_line(params, df$x)
+  error <- max(abs(yhat - df$y))
+  error
+}
+
+best <- optim(c(0, 0), calc_max, df = sim1)
+best$par
+
+ggplot(sim1, aes(x, y)) + 
+  geom_point(size = 2, colour = "grey30") + 
+  geom_abline(intercept = best$par[1], slope = best$par[2])
+
+lm_ans <- lm( y ~ x, data = sim1 )
+best_params <- coef(lm_ans)
+best_params
+
+ggplot(sim1, aes(x,y)) + geom_point() + 
+  geom_abline(intercept = best_params[[1]], slope = best_params[[2]])
+```
+
 
 
 # Visualizing the Appropriateness of a Model
@@ -77,49 +120,260 @@ function in R to determine the coefficients associated with our model.
 
 Recall the `sim1` data set from the last class (and our) intro exercise.
 
+```{r}
+sim1
+```
+
 
 Some common steps we'll be taking:
 1)  Generate the model using `lm()`.
 
+```{r}
+mod <- lm(y ~ x, data = sim1)
+typeof(mod)
+
+# Assuming y ~ x means finding an equation y = a1 + a2 * x
+# The lm() minimizes the RMS error to find the best "a1", "a2" choice.
+
+coefficients(mod)
+```
+
 
 An ASIDE about the **Formula**, `y~x` and its meaning in R.
+Consider you have a data frame of x and y data values (x0, y0), (x1, y1), ..., (x_m, y_m)
+Want to find a1 and a2 such that yhat = a1 + a2 * x has minimum value of (y - yhat).
+Plug every (xi, yi) pair into my function:
+y0 = a1 + a2 * x0
+y1 = a1 + a2 * x1
+y2 = a1 + a2 * x2
+...
+ym = a1 * a2 * xm
 
+For all of these to be true at the same time, our data must fall perfectly on a line. Odds are it's not.
+
+The unknown here are a1 and a2. We can rewrite those equations above as a matrix equation:
+
+[ vector of y values ] = matrix of coefficients * [ vector of unknowns ] = matrix of coefficients * [a1 \\ a2]
 
 Now we want to see 
 
+```{r}
+model_matrix(data = sim1, y ~ x)
+```
+
+
 ## Visualizing the Fit
 
+```{r}
+# Visualizing the fit of our linear model on sim1
+# We can plot it
+# first we can plot it with our data
+coe <- coefficients(mod)
+sim1 %>% 
+  ggplot(aes(x, y)) +
+  geom_point() +
+  geom_abline(intercept = coe[[1]], slope = coe[[2]], col = 'red')
+
+# Rather than use abline (in particular, when we have more than one variable, or terms where variables
+# are multiplied together), abline won't help them
+
+# 2) Generate an evenly spaced domain corresponding to your x values
+
+grid <- sim1 %>% data_grid(x)
+grid
+
+# now find the associated y-values for our model. Add this as a column onto our grid
+grid <- grid %>% add_predictions(mod) # Uses x values in grid and makes prediction, pred
+grid
+
+# now plot these
+ggplot(sim1, aes(x, y)) +
+  geom_point() +
+  geom_line(aes(x, pred), data = grid, color = 'red') + 
+  geom_point(aes(x, pred), data = grid, color = 'red')
+```
+
 ## Visualizing the Residual
+
+```{r}
+# To visualize the residuals, we want to add them to our data frame
+sim1resid <- sim1 %>% add_residuals(mod); sim1resid
+
+# Do they have a particular pattern to their distribution? Plot the distribution of the residuals
+sim1resid %>%
+  ggplot(aes(x, y = resid)) +
+  geom_point() +
+  geom_ref_line(h = 0) # the mean residual value associated with a least squares line is 0
+
+sim1resid %>%
+  ggplot(aes(x = resid)) +
+  geom_histogram(binwidth = 0.25)
+
+sim1resid %>%
+  ggplot(aes(x = resid)) +
+  geom_freqpoly(binwidth = 0.25)
+
+sim1resid %>%
+  ggplot(aes(x = resid)) +
+  geom_density()
+```
+
 
 # Formulas (i.e. y ~ x) and Models from `lm()`
 
 ## Single Numerical Independent/Predictor Variable
 
+See above ... sim1 model `y ~ x`
+
 ## Single Categorical Independent/Predictor Variable
 
+```{r}
+# look at sim2
+sim2
+
+# x is NOT numberical, it's categorical
+# we can still do a linear model:
+# what does y ~ x mean when x is categorical
+
+model_matrix(y ~ x, data = sim2)
+# coefficients are intercept, xb, xc, xd
+# y = a1 + a2 * xb + a3 * xc + a4 * xd -> so four coefficients
+# The intercept gives the value associated with x = a,
+# a2 gives the values associated with x = b, a3 with x = c, and a4 with x = d
+# when xb = 0, xc = 0, xd = 0 ---> think of 0's and 1's as FALSE and TRUE
+
+# find the model
+mod <- lm(y ~ x, data = sim2)
+(coe <- coefficients(mod))
+
+# let's plot our data and then add the linear model
+ggplot(sim2, aes(x)) +
+  geom_point(aes(y = y))
+
+grid <- (data_grid(sim2, x) %>%
+           add_predictions(mod))
+grid
+
+
+ggplot(sim2, aes(x)) +
+  geom_point(aes(y = y)) +
+  geom_point(aes(x, pred), data = grid, color = 'red')
+```
+Claim: the predictions are at the average values of y for each value of x.
+
+```{r}
+sim2 %>%
+  group_by(x) %>%
+  summarise(mu = mean(y))
+coe
+
+# mean for x = a
+coe[[1]]
+
+# mean for x = b
+coe[[1]] + coe[[2]]
+
+# mean for x = c
+coe[[1]] + coe[[3]]
+
+# mean for x = d
+coe[[1]] + coe[[4]]
+```
+
+```{r}
+# Let's look at matrix model for y ~ x - 1
+
+model_matrix(y ~ x - 1, data = sim2)
+
+mod2 <- lm(y ~ x - 1, data = sim2)
+coefficients(mod2)
+
+# corresponds to model:
+# y = a1 * xa + a2 * xb + a3 * xc + a4 * xd
+```
+We looked at "fit" but not the residuals
+
+```{r}
+sim2resid <- sim2 %>% add_residuals(mod)
+
+
+sim2resid2 <- sim2 %>% add_residuals(mod2)
+
+# plot residuals
+sim2resid %>%
+  ggplot(aes(x = resid)) +
+  geom_histogram(binwidth = 0.25)
+
+sim2resid2 %>%
+  ggplot(aes(x = resid)) +
+  geom_histogram(binwidth = 0.25)
+
+sim2resid %>%
+  ggplot(aes(x, y = resid)) +
+  geom_point() +
+  geom_ref_line(h = 0)
+```
+
+
 ## Two Independent/Predictor Variables; One Numerical and One Categorical
+
+```{r}
+sim3
+
+# use two inputs: x1 (numerical), x2 (categorical)
+# can you guess the number of coefficients for y ~ x1 + x2
+model_matrix(y ~ x1 + x2, data = sim3)
+
+# model_matrix(y ~ x1 + x2 - 1, data = sim3)
+
+# We'll also consider another model y ~ x1 * x2
+model_matrix(y ~ x1 * x2, data = sim3)
+
+# Find these two models
+mod1 <- lm(y ~ x1 + x2, data = sim3)
+mod2 <- lm(y ~ x1 * x2, data = sim3)
+
+coe1 <- coefficients(mod1); coe1
+coe2 <- coefficients(mod2); coe2
+
+# Look at the fit with the predictions of the model:
+# 1) Make a grid of my domain with equally spaced values.
+#    Domain is 2 dimensional.
+grid <- data_grid(data = sim3, x1, x2); grid
+
+# 2) Get the associated predictions for those values and add as columns in our grid.
+#    ?add_predictions
+grid <- (grid %>%
+           spread_predictions(mod1, mod2))
+grid
+
+# Need to pivot_longer so model is a variable and we can use it as a dimension
+grid_longer <- grid %>% pivot_longer(mod1:mod2, names_to = "model", values_to = "pred"); grid_longer
+
+# Plot our prediction (careful, in 3D, let's use x = x1, y = y or pred, color = x2)
+ggplot(sim3, aes(x1)) +
+  geom_point(aes(y = y, color = x2)) +
+  geom_line(aes(x1, y = pred, col = x2), grid_longer) + 
+  facet_wrap(~ model)
+
+# Hard to tell where model is,
+# Another possible visualization:
+# Equivalent to spread_predictions + pivot_longer is gather_predictions
+
+grid <- data_grid(data = sim3, x1, x2); grid
+grid <- grid %>% gather_predictions(mod1, mod2); grid
+
+sim3resid <- sim3 %>% gather_residuals(mod1, mod2)
+
+sim3resid %>%
+  ggplot(aes(x = x1, y = resid, col = x2)) +
+  geom_point() +
+  facet_grid(model ~ x2)
+
+# mod2 is better since it is more uniformly distributed
+```
 
 ## Two Numerical Independent/Predictor Variables
 
 ## More Non-Linear Models using Transformations
 
-
-
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
