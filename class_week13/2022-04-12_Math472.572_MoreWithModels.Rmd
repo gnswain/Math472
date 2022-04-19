@@ -1,0 +1,357 @@
+---
+title: "20220-4-12 Math 472/572 Refining Models"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+#  Modeling
+
+In last week's class we talked about visualizing models (what they capture and what they don't capture).  We can visualize the model more precisely by discretizing our domain and calculating predictions for a model over that domain, and then looked at the graph to see what is "captured" in the model.  Then we would return to our original data and look at residuals associated with our model ... this is what is NOT captured by the model.   If it tends to have any patterns, that means we're still missing something.  Perhaps we didn't have an appropriate model, or we're still missing other influences to include in our model.  But if our residuals appear to be random noise, we can have more confidence in our model.
+
+Last wee we found models using R's linear model (lm()) function and discovered what formulas such as `y ~ x`, `y ~ x - 1`, `y ~ x1 + x2` and `y ~ x1 * x2` mean, which also depends on the types of variables we're dealing with (numerical or categorical).  The `model_matrix()` helped us understand this.
+
+We managed to consider models with a numerical response (dependent) variable with
+- a single numerical predictor (independent) variable
+- a single categorical predictor (independent) variable
+- TWO variables: a numerical variable and a categorical variable.
+
+Tonight we'll consider the case with two numerical predictor (independent) variables as well as some more non-linear models (though we still use `lm()` to find them).  We'll also look at refinding and building models with bigger data we've already worked with this semester (the diamonds and flight data).
+
+# More Model Families
+
+## Case D: Two Numerical Predictor Variables
+
+We'll use the built in data from the `modelr` library once again for this exploration.  Go ahead and check out `sim4`.  We're interested in trying to determine a relationship between the predictor variables x1 and x2 with the response, y.  Consider how you may visualize this data.
+```{r}
+library(modelr)
+
+sim4
+
+#  What ways can you visualize the data?  Try to think of a few and see what you find most informative.
+
+ggplot(sim4, aes(x = x1, y = y, col = x2)) +
+  geom_point()
+
+ggplot(sim4, aes(x = x1, y = x2, fill = y)) +
+  geom_tile()
+```
+
+We want to consider two models as we did in Case 3 with one numerical and one categorical predictor variable:
+```{r}
+mod1 <- lm(y ~ x1 + x2, data = sim4)
+mod2 <- lm(y ~ x1 * x2, data = sim4)
+
+#  Recall the structure of these models and how many coefficients are associated with each
+
+model_matrix(y ~ x1 + x2, data = sim4)
+model_matrix(y ~ x1 * x2, data = sim4)
+```
+
+Now, let's create a discretization of our domain and see what our models capture:
+
+```{r}
+#  create the grid using data_grid()
+
+grid <- (sim4 %>%
+           data_grid(x1, x2))
+grid
+
+#  Add in the predictions from our two models.  And
+#  because there are TWO models to compare and we'd 
+#  like them in the long table format (so we can use
+#  model version as a variable), we'll use
+#  gather_predictions() and add these to our grid
+
+grid <- (grid %>%
+           gather_predictions(mod1, mod2))
+grid
+
+#  Now consider how to visualize our results.  This is
+#  again more challenging as we have two dimensions of
+#  values and we have a prediction for ever pair of 
+#  (x1, x2) values.
+
+grid %>%
+  ggplot(aes(x = x1, y = x2, fill = pred)) +
+  geom_tile() +
+  facet_wrap(~ model)
+
+#  Try a geom_tile
+
+#  Try color and grouping by x1 or x2 with geom_line
+
+grid %>%
+  ggplot(aes(x = x1, y = pred, col = x2, group = x2)) +
+  geom_line() + 
+  facet_wrap(~ model)
+
+#  Install the "rgl" and "car" packages.  Then add the 
+#  car library and try scatter3d (note, this is NOT a part
+#  of ggplot2).
+
+```
+
+What about looking at our residuals?  How can we visualize them?  First, we need to make a duplicate of our data frame and add our residuals ....
+
+```{r}
+#  Make a new data frame called sim4_resid and 
+#  add the residuals to this using gather_residuals()
+
+sim4_resid <- (sim4 %>%
+                 gather_residuals(mod1, mod2))
+sim4_resid
+
+
+#  Consider plotting these and faceting over the model
+#  and possibly one of the variables.  If it's a bit
+#  tight, try breaking it up (filtering) into multiple
+#  sets.
+
+ggplot(sim4_resid, aes(x = x1, y = resid, col = x2)) +
+  geom_point() +
+  facet_wrap(~ model)
+
+ggplot(sim4_resid, aes(x = x1, y = resid, col = x2)) +
+  geom_point() +
+  facet_grid(model ~ x2)
+```
+
+##  Some Non-Linear Models (besides the ones with interactions)
+
+Linear models may not always be the most appropriate.  Suppose your data looks quadratic in nature, or perhaps exponential, logarithmic, or sinusoidal.  You can still find models like these using `lm()` in R, but you may need to perform some transformations of your data first or indicate a formula in a special way.
+
+###  Quadratic Data
+
+To see how this works, first we'll manufacture some quadratic data by adding some noise to purely quadratic data.
+
+```{r}
+x <- seq(from = -4,to = 6, by = 0.25)
+y <- x^2 + x - 3 +  2*rnorm(length(x))
+
+quad_data <- tibble(
+  x = x,
+  y = y
+)
+
+ggplot(quad_data,aes(x,y)) + geom_point()
+
+```
+
+In order to indicate that we want a formula for a quadratic function, such as $y = a1 + a1*x + a3*x^2$ we can't use `y ~ x + x^2` as you may assume.  See what happens with the `model_matrix` in that case.  
+
+```{r}
+
+```
+
+There are several of other approaches we can use that will work instead.  First, we can define a new variable in our data set that has the values of $x^2$, and find a formula for y involving x and this new variable:
+
+```{r}
+#  Add a new variable, xsqr, that holds the values 
+#  of x^2 to our quad_data data frame.
+
+#  Check out the model_matrix for y ~ x + xsqr
+
+quad_data <- quad_data %>% mutate(xsqr = x^2)
+
+#  Find this model and check out its coefficients
+
+
+
+#  Add the predictions to our data in a new data
+#  frame then make a plot of the original data 
+#  and the model
+
+quad_preds1 <- quad_data %>% add_predictions()
+
+
+
+```
+
+Option 2:  Instead of typing x^2 in our formula which will represent x*x or the interaction of x with itself, we can use the `I()` function in R, which forces R to treat formula operators as aritmetic operators, or "as is".
+
+```{r}
+#  Let's remove xsqr from our quad_data and 
+
+quad_data <- quad_data %>% wHAT GOES HERE?
+  
+#  Check out the model_matrix for our quadratic
+#  formula if we use our I(x^2)
+  
+
+#  Find the model, make a new data frame and add
+#  predictions, them make a plot to illustrate
+#  what you capter.
+  
+```
+
+Yet another option is to use the `poly()` function in our formula specification.  It's first argument will be our numerical vector x, and the second is "degree" which should give the degree of the polynomial to be used.
+
+
+We could also consider using piecewise polynomials (b-splines) as used with the `ns` function in R, but we'll hold off on that for now.
+
+#  Refining Models
+
+As mentioned at the start of these notes, we're going to look at some of the data frames we've used already in class.  Let's start with the `diamonds` data from `ggplot2`.  Refresh yourself with this data.
+
+```{r}
+library(modelr)
+options(na.action = na.warn)
+
+# View(diamonds)
+
+#  You may or may not remember that we saw some odd things when we looked at price in comparison with color, cut, or clarity.  Check out boxplots of each, where the y value is given by price
+
+ggplot(diamonds, aes(x = color, y = price)) +
+  geom_boxplot()
+
+ggplot(diamonds, aes(x = cut, y = price)) +
+  geom_boxplot()
+
+ggplot(diamonds, aes(x = clarity, y = price)) +
+  geom_boxplot()
+
+```
+
+Recall that the worst color is "J" and the worst clarity is "I1" which indicates flaws (inclusions) are visible.  Yet we see that all colors, cuts, and clarity have observations with very high cost.  It's also the case that the median price for the worst cut is about the same as for all higher quality cuts;  the median for the worst color diamonds is HIGHER than other diamonds, and the worst clarity has a higher median than all other clarities except the second worst. 
+
+What is going on?  Can you think of any explanations?
+
+```{r}
+#  How many observations are in our data set? -> 53940
+
+nrow(diamonds)
+
+#  What is the largest price in our data set? -> $18,823
+
+max(diamonds$price)
+
+
+#  What is the largest size (carat) in our data set? -> 5.01
+
+max(diamonds$carat)
+
+#  Do any sizes seem like "outliers"  (say more than Q3 + 3*IQR, i.e. an EXTREME outlier)
+summary(diamonds)
+
+(carat_qs <- quantile(diamonds$carat))
+(outer_fence <- carat_qs[[4]] + 3 * (carat_qs[[4]] - carat_qs[[2]]))
+
+# Plot carat versus price
+
+ggplot(diamonds, aes(x = carat, y = price)) +
+  geom_point()
+```
+
+Let's work with a revised "diamonds" data set that does not contain these extreme outliers.  Call it diamonds2
+
+```{r}
+#  create diamonds2, the smaller data frame without the extreme outliers
+diamonds2 <- (diamonds %>%
+                filter(carat <= outer_fence))
+
+# What proportion of data do we have?
+
+nrow(diamonds2) / nrow(diamonds)
+
+#  Make a geom_hex (which is essentially a "3d" histogram -- why?) plot of carat versus price for diamonds2.  Are there any patterns you think you see that we can model?
+
+ggplot(diamonds2, aes(x = carat, y = price)) +
+  geom_hex(bins = 50)
+
+#  In order to try to fit this type of model, we'll need to transform our data, i.e. make new variables such that we can find a linear relationship between the new variables that correspond to this type of model between price and carat.  
+
+
+
+#  Make a geom_hex plot of these new variables.  Does it look linear?
+
+```
+
+Now that we have what appears to be linear data, lets find a model for this data.
+
+```{r}
+#  Find the linear model between lprice and lcarat
+
+# price = c * e ^ (carat)
+# let's use base 2: so price = c * 2 ^ (carat)
+# undo exponents base 2 with log base 2
+# log_2(price) = log_2(c * 2 ^ (carat))
+#              = log_2(c) + log_2(2 ^ (carat))
+#              = log_2(c) + carat
+
+diamonds2 <- (diamonds2 %>%
+                mutate(lprice = log2(price), lcarat = log2(carat)))
+
+
+#  Add a line plot on top of our geom_hex of lcarat and lprice.  (Remember to use a grid that contains a sequence of values from our modified lcarat and add the predictions to this.)
+
+ggplot(diamonds2, aes(x = lcarat, y = lprice)) +
+  geom_hex(bins = 50)
+
+# Find best fit linear model
+
+mod_log <- lm(data = diamonds2, lprice ~ lcarat)
+
+# make a grid of predictions
+grid <- (diamonds2 %>%
+           data_grid(lcarat = seq_range(lcarat, 25)) %>%
+           add_predictions(mod_log))
+
+ggplot(diamonds2, aes(x = lcarat, y = lprice)) +
+  geom_hex(bins = 50) +
+  geom_line(data = grid, aes(x = lcarat, y = pred), color = "magenta")
+
+```
+
+Now let's go back to our original variables and see how our transformed model fits:
+
+Our model needs an input of the $\log_2(carat)$, so first \log_2(carat)$.  We want to get to price and carat so we will exponentiate this equation with base 2, i.e.
+$2^{\log_2(price)} = 2^{a_1 + a_2 \log_2(carat)}$
+$price = 2^{a_1} * 2^{a_2 \log_2(carat)}$
+$price = 2^{a_1} * 2^{\log_2(carat^{a_2})}$
+$price = 2^{a_1} * carat^{a_2}$
+```{r}
+#  Start by making a new grid from carat values.  Lets use a sequence of 20 values.
+
+grid <- diamonds2 %>% 
+  data_grid(carat = seq_range(carat,20)) %>%
+  #  next get the corresponding lcarat values needed for our model
+  mutate(lcarat = log2(carat)) %>%
+  #  now add the predictions from our model for the log2(price)
+  add_predictions(mod_log, "lprice") %>%
+  #  finally, we want the values of price rather than lprice
+  #  since we have lprice = log2(price), then price = 2^(lprice)
+  mutate(price = 2^lprice)
+
+ggplot(diamonds2, aes(carat, price)) +
+  geom_hex(bins = 50) +
+  geom_line(data = grid, color = "red")
+```
+
+Any observations?
+
+Now that we know what we capture with this model, let's look at what we don't capture.  Time to look at the residuals.
+
+```{r}
+d_resid <- diamonds2 %>% add_residuals( mod_log , "lresid")
+
+ggplot(d_resid, aes(lcarat, lresid)) + 
+  geom_hex(bins = 50)
+```
+
+Now let's see what's not explained by our exponential model ... i.e. let's look at the residual as my "data"
+
+```{r}
+ggplot(d_resid, aes(x = cut, y = lresid)) +
+  geom_boxplot()
+
+ggplot(d_resid, aes(x = clarity, y = lresid)) +
+  geom_boxplot()
+
+ggplot(d_resid, aes(x = color, y = lresid)) +
+  geom_boxplot()
+```
+
+

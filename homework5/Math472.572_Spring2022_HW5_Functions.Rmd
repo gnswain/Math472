@@ -1,0 +1,258 @@
+---
+title: "Math 472/572 Homework 5"
+author: "Graham Swain"
+date: "3/31/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Functions in R
+There are 40 possible points on this homework.  It is **due by Friday, April 8, 
+2022 at 11:59 p.m.**  You may talk to your classmates about the homework, but
+what you submit MUST be an indication of your own work and understanding.
+Please contact Dr. McNelis if you have any questions.
+
+*Problems*:
+
+1.  [5 points] Create a function in R called `scale_ab()` that takes two inputs, 
+    a numerical vector, x, and a vector that contains the values of a 
+    and b (where a is assumed to be the first element and b the second element).
+    Your function should output a rescaled version of x such that its values 
+    have been rescaled to be between a and b, so the smallest value maps to a 
+    and the largest to b.  This can be accomplished using the formula
+    \begin{equation*}
+    x_{new} = a + \frac{x_{old} - \alpha}{\beta - \alpha} (b - a)
+    \end{equation*}
+    
+    where $\alpha$ is the minimum value of x and $\beta$ is the maximum value
+    of x.  NOTE: Your function should have a default argument that na.rm is
+    TRUE, and should pass the value stored in this na.rm to any necessary
+    functions as it's na.rm input.
+    
+```{r 1}
+scale_ab = function ( x, ab, na.rm = TRUE ) {
+  if (na.rm) {
+    x <- x[!is.na(x)]
+  }
+  
+  scaled <- vector(typeof(x), length(x))
+  
+  min <- min(x)
+  max <- max(x)
+  
+  (scaled <- ab[1] + ((x - min) / (max - min)) * (ab[2] - ab[1]))
+}
+```
+    
+2.  [5 points] Use a single string of commands to map your `apply_ab` to all 
+    numerical variables in the `iris` data frame, with a = -1 and b = 1, and 
+    the use the `pairs` function to make a scatter plot of all possible pairs 
+    of numerical variables.
+
+```{r 2}
+sapply(iris[, sapply(iris, is.numeric)], scale_ab, ab = c(-1, 1)) %>% pairs
+```
+    
+3.  [5 points]  Use the following code to randomly generate a tibble of fake 
+    test scores, then make a `pivot_longer` version of the tibble to help you 
+    create an illustration of the distribution of these test grades.  The 
+    illustration should include histograms (using bin widths of 10) with a 
+    density plot on top of them.  They should be broken up by test, and their 
+    horizontal axes scales should all go from 0 to 100.  It is appropriate to 
+    add a title to this illustration as well.  Dr. McNelis has provided an 
+    example of such an image with this assignment.
+    
+```{r 3}
+testscores <- tibble(
+  test1 = sample(rnorm(100,78,15), 50),
+  test2 = sample(c(rnorm(100,65,21),rep(NA,5)), 50),
+  test3 = sample(c(rnorm(100,75,12),rep(NA,10)),50),
+  test4 = sample(c(rnorm(100,82,9),rep(NA,10)),50)
+)
+
+fixed <- as.tibble(sapply(na.omit(testscores), scale_ab, ab = c(0, 100)))
+testscores_longer <- (fixed %>%
+                        pivot_longer(test1:test4, names_to = "Test", values_to = "Score") %>% 
+                        na.omit())
+
+ggplot(testscores_longer) + 
+  geom_histogram(aes(x = Score, y = ..density.., fill = Test, color = Test), binwidth = 10, alpha = .5) +
+  geom_density(aes(x = Score, color = Test)) +
+  facet_wrap(~ Test) +
+  labs(title = "Distribution of Test Scores")
+```
+
+    
+4.  [5 points]  Make a function, `zscore`, that will take as input a vector of 
+    numerical values, x, and an optional na.rm argument (with the default na.rm 
+    set to be TRUE).  As with the `scale_ab` function in part 1, you should pass 
+    the value stored in the na.rm input on to other appropriate values called 
+    in the body of your function. This function is to return a vector of 
+    corresponding $z$-score values.  Then apply this function to the test
+    scores in `testscores` using either a for loop or a mapping.  Do not
+    overwrite the `testscores` values.
+    
+```{r 4}
+zscore <- function( x, na.rm = TRUE) {
+  if (na.rm) {
+    x <- x[!is.na(x)]
+  }
+  z <- vector(typeof(x), length(x))
+  mean <- mean(x, na.rm = na.rm)
+  sd <- sd(x, na.rm = na.rm)
+  
+  (z <- (x - mean) / sd)
+}
+
+sapply(testscores, zscore)
+```
+    
+    
+5.  "Curving Grades":  At times faculty mention "curving" grades and that 
+    likely means just adding a fixed amount of points to test grades.  But we
+    will consider other ways to "curve" grades, which includes trying to 
+    help them fit a more normal distribution.  The following subproblems will
+    require you to create functions for each different form of curving that
+    Dr. McNelis could think of.  Each of the functions you create, **with the
+    exception of `curves_sqrt`**, should have
+    an optional input of na.rm with the default value set to TRUE.  Treatment
+    of NA values should be determined by the value of na.rm passed to the
+    function.  You should make use of functions you've created already whenever
+    appropriate.
+    
+    
+    a.  [2 points]  Create a function called `curve_sqrt` that takes an input 
+      of a numerical vector, x, and outputs a vector of nuerical values 
+      calculated by
+$$
+        \begin{equation*}
+        x_{new} = 10*\sqrt{x}
+        \end{equation*}
+$$
+    
+```{r 5a}
+curve_sqrt <- function(x, na.rm = TRUE) {
+  if (na.rm) {
+    x = x[!is.na(x)]
+  }
+  
+  new <- vector(typeof(x), length(x))
+  (new <- 10 * sqrt(x))
+}
+```
+    
+      
+    b.  [4 points]  Create a function called `curve_ms` that takes inputs of a 
+      numerical vector, x, a desired mean for the distribution, mu, and a 
+      desired standard deviation for the distribution, sigma.  This function 
+      should output a vector of numerical values calculated by:
+        i)  Calculating the z score of your x value, z_x, then
+        ii) Convert it a distribution with the desired mean and standard deviation
+            by calculating 
+$$
+            \begin{equation*}
+            x_{new} = \mu + z_x * \sigma
+            \end{equation*}
+$$
+            corresponding to adding the bump value to the each
+            
+```{r 5b}
+curve_ms <- function(x, mu, sd, na.rm = TRUE) {
+  if (na.rm) {
+    x = x[!is.na(x)]
+  }
+  z_x = zscore(x, na.rm)
+  new <- vector(typeof(x), length(x))
+  
+  (new <- mu + z_x * sd)
+}
+```
+
+            
+    c.  [4 points]  Create a function called `curve_ab` that takes inputs of a 
+      numerical vector, x, the minimum curved score, and the maximum curved
+      score. This function should output a vector of numerical values 
+      calculated by:
+        i)   Calculating the z score of your x value, z_x, then
+        ii)  Finding the associated probability of getting a score no larger
+             than that on the standard normal curve (i.e., find pnorm(z_x)), then
+        iii) Send scale those values so they are distributed in the same manner
+             over the interval [a,b]
+             
+```{r 5c}
+curve_ab <- function(x, min, max, na.rm = TRUE) {
+  if (na.rm) {
+    x = x[!is.na(x)]
+  }
+  z_x = zscore(x, na.rm)
+  p_x = pnorm(z_x)
+  new <- vector(typeof(x), length(x))
+  
+  (new <- scale_ab(p_x, c(min, max)))
+}
+```
+             
+    d.  [4 points]  Create a function called `curve_linear` that takes inputs of 
+      a numerical vector, x, the desired mean (mu_d), and the desired maximum 
+      (M_d) for the curved test scores. This function should output a vector of 
+      numerical values calculated by:
+$$
+        \begin{equation*}
+        x_{new} = mu_d + \frac{(M_d - mu_d)}{(M_a - mu_a)}(x - mu_a)
+        \end{equation*}
+$$
+        where $M_a$ = maximum value from x and $mu_a$ = mean of values in x.
+        
+```{r 5d}
+curve_linear <- function(x, mu_d, M_d, na.rm = TRUE) {
+  if (na.rm) {
+    x = x[!is.na(x)]
+  }
+  mu_a = mean(x)
+  M_a = max(x)
+  new <- vector(typeof(x), length(x))
+  
+  (new <- mu_d + ((M_d - mu_d) / (M_a - mu_a)) * (x - mu_a))
+}
+```
+
+
+6.  [6 points]  Apply your curving functions from Problem 5 to the following 
+    tibble, saving each output in a new variable for the tibble with an 
+    appropriate name (like "sqrt_curve", "new_mu_sigma", etc).  Specifics for 
+    additional inputs are given below.  Once you have your new tibble, use what 
+    you learned in Problem 3 to generate a plot of the histograms with density 
+    plots for each version of the test scores.
+      For `curve_ms` we want a mean of 75 and standard deviation of 8
+      For `curve_ab` we want a min value to be 50 and a max values to be 100
+      For `curve_linear` use a mean of 75 and a max of 100.
+
+```{r}
+test_grades <- tibble(
+  original = c(rep(NA,2), 12, 38, rep(52,4), 53, 54, rep(55,6), 56, 58, 
+               59, 59, 61, rep(62,5), 89)
+)
+
+sqrt_curve <- curve_sqrt(test_grades)
+ms_curve <- curve_ms(test_grades, 75, 8)
+ab_curve <- curve_ab(test_grades, 50, 100)
+linear_curve <- curve_linear(test_grades, 75, 100)
+
+curves <- tibble(sqrt_curve, ms_curve, ab_curve, linear_curve)
+names(curves) <- c("sqrt", "ms", "ab", "linear")
+
+curves_longer <- (curves %>%
+                    pivot_longer(sqrt:linear, names_to = "Curve", values_to = "Grade"))
+
+ggplot(curves_longer) + 
+  geom_histogram(aes(x = Grade, y = ..density.., fill = Curve, color = Curve), binwidth = 10, alpha = .5) +
+  geom_density(aes(x = Grade, color = Curve)) +
+  facet_wrap(~ Curve) +
+  labs(title = "Test Scores with Different Curves")
+```
+
+      

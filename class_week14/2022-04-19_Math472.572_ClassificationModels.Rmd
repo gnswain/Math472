@@ -1,0 +1,239 @@
+---
+title: "Math 472/572, Tuesday, April 19, 2022"
+output: html_notebook
+---
+
+# More Modeling -- But Classification
+
+For the past few weeks we've worked with models for data.  We restricted 
+ourselves to predicting **numerical** values of response (dependent) 
+variables based on numerical (and at times categorical) predictor (independent)
+variable values.  Your second test focuses on building such models.
+
+Tonight we will consider what we can do if the value we want to predict has a **categorical** value.  In particular, we'll take a look at two different classification methods:
+- Linear Discriminant Analysis (LDA), and
+- k Nearest Neighbor (KNN)
+for classification.  Note, in most cases, Dr. McNelis believes she read that it's best that our response variable should be a **factor** in R.
+
+# Linear Discriminant Analysis (LDA)
+
+Dr. McNelis is not as well-versed with this, but the primary idea is that we want to try to find a linear combination of our predictor variables (which must all be NUMERICAL variables!) that helps to separate or observations based on a CATEGORICAL response variable values.  For those with linear algebra, think of the linear combinations of variables defining (hyper)planes that can slice up our vector space.  By finding these planes, they can cut up our space and help us find a direction from which to view our space to clearly separate out our observations in terms of this categorical variable.
+
+## Training and Testing Sets
+
+For this, and our other model method, we must take a data set in which we have known values of our predictor variables as well as their associated (categorical) response variable.  We will then break this data set up into two sets of observations (of all variable values), a training set and a testing set.  You will typically have a much larger training set than testing set (e.g. 70%/30% or 80%/20% splits of the original data).  We will use the training data set to develop necessary model parameters and values, so that given a new observation, of which we only have values of our predictor variables, our model will be able to make a prediction as to what value of response would be associated with it.  We run our model on our testing data (for which we also have the correct answers) to see how good our model seems.
+
+For the first examples we'll work with today, we'll use a data set we've seen before and one you'll find is often used to help explain these models: the `iris` dataset from the `dplyr` library.
+
+```{r}
+library(tidyverse)
+library(purrr)
+
+str(iris)
+
+```
+
+Let's suppose we want to use 80% of our data set as our training data and the other 20% as our testing data.  We'll want to take a random sample of our observations from our data set.  Use the `sample` function to help us do this.
+
+```{r}
+#  We can set a seed for our random number generator to assure that
+#  we will all have the same results.
+set.seed(20220419)
+
+#  Generate a list of row numbers (observation numbers) that we'll use
+#  from our data set as the training observations.  Remember, we want
+#  this to account for roughly 80% of our data.
+
+
+```
+
+Before we go further, we'll take into consideration the fact that the Linear Discriminant Analysis method has a few requirements:
+- Our predictor variables are all numerical and our response variable is categorical (check mark)
+- Our numerical preditor variable values are **normalize** i.e. that are all scaled so that differences in original scale does not bias our work.  In particular, it is preferable that these values are normally distributed with mean zero and standard deviation of one, so we will work with z-scores of our original variables
+- It is recommended that predictor variables not have outliers, so we should remove those first before normalizing
+- Go ahead and remove any observations containing NA's before you start too
+
+```{r}
+#  Remove any observations with NA.  Note, if you install tidyr, you can
+#  use the drop_na() function such as iris <- iris %>% drop_na()
+iris <- na.omit(iris)
+
+#  Now let's create a z-score function again, that takes 
+
+
+#  And now we can apply this to all but the last (fifth) column of iris
+#  and call it n_iris
+
+
+#  And check that our mean is zero and standard deviation is zero for each
+
+```
+
+Now that this is done, we can split this normalized iris data frame up into our training and testing sets.
+
+```{r}
+#  Define iris_train and iris_test.  Can you do this using filter?
+
+#  What if you wanted to use the dfname[ , ] notation?
+
+```
+
+Now we're ready to fit our Linear Discriminant Analysis model.  But this is in a special library that we must load first.  It's in the MASS package.
+
+```{r}
+install.packages("MASS")
+library(MASS)
+
+#  Now get the model.  We'll use the formula input option, i.e. we'll 
+#  indicate ResponseVar ~ PredVar1 + PredVar2 + .., or more simply
+#  ResponseVar ~ . where the ~. means "all other variables"
+
+model <- lda(formual = Species~., 
+             data=iris_train)
+model
+```
+
+Now that we have our model, we want to see how it performs on our testing data set.  
+
+```{r}
+#  See how our model is at determining the correct value for our predictions.
+predicted <- predict(model, iris_test[-5])
+predicted
+
+#  And we can get an idea of what proportion our model correctly classified
+mean(predicted$class==iris_test$Species)
+```
+
+We can also visualize what the LD1 and LD2 represent with the following code, taken from <https://www.statology.org/linear-discriminant-analysis-in-r/>
+
+```{r}
+#  Merge the data sets (as columns) from the training set and
+#  and the LD1 and LD2 values associated with these from our model
+lda_plot <- cbind(iris_train, predict(model)$x)
+ggplot(lda_plot, aes(LD1, LD2)) +
+  geom_point(aes(color = Species))
+```
+
+# k Nearest Neighbor
+
+The k-Nearest Neighbor model also allows us to consider a set of predictor variables (most easily, those that have numerical values or binary categorical values, but it will work with categorical variables with more than two types of answers as well), and a single categorical (as a factor) response variable.
+
+**The Big Idea**
+The k-Nearest Neighbor model works by considering the location of observations in our (n-1) dimensional predictor space (i.e. the space that consists of all possible values of our n-1 predictor variables) and associates a distance between our unclassified value and all other observations in the set.  When these variables are numerical, it's much easier to conceive of the idea of distance and how to measure distance.
+
+In order to determine the classification of our unknown observation (i.e. we have the n-1 predictor values but no answer for the categorical response variable value), we'll use our distance metric to determine its distance from all of the other observations in the space.  The user will indicate a value for k, and then we'll consider the k Nearest Neighbors of our unknown observation.  We'll see what values they have of the response variable, and determine which is the most common response.  That is the response we'll assign to our unknown observation.  It's something like the one with the most votes wins.
+
+## k Nearest Neighbors with Only Numerical Predictor Variables
+To start with the simpler options, our first example will once again deal with numerical predictor variables only, so we'll use our iris data set again.
+
+As with our LDA model, we'll want to normalize our numerical values.  We've already done this earlier, so we'll use those same training and testing sets.  We will make one adjustments and pull out the Species column from each set and mark it as our training and testing response.
+
+```{r}
+# Take the Species column out of the training set and save it as iris_train_response
+
+#  Do the same for the testing set ...
+
+
+
+```
+
+We'll need to use another package to get access to (one of) the k-Nearest Neighbor functions.  It's the "class" package.
+
+```{r}
+install.packages("class")
+library(class)
+```
+
+Now we're ready to try out our KNN function.  Note, this one is designed to take a training set, a testing set (of one or more observations), and a factor vector of the correct classifications for the training set (`cl`), as well as the value of k.
+
+```{r}
+#  Now we'll use our k-Nearest Neighbor function
+
+iris_test_predictions <- knn(train = iris_train,
+           test = iris_test,
+           cl = iris_train_response,
+           k=13)
+
+```
+
+
+```{r}
+#  We can see the predictions for each observation in our test set and
+#  compare them to the correct answer with a confusion matrix (tab)
+tab <- table(iris_test_predictions,iris_test_response)
+tab
+
+#  In order to quantify how well our model did, we'll calculate the 
+#  number of correct predictions and divide by the total number of 
+#  predictions to get an accuracy proportion.  We can make a function 
+#  to do this for us.  Note, the input to the function is a matrix or table.
+
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(tab)
+```
+
+##  What's the best value for k?
+
+There's no perfect formula to determine the best value of k in our k Nearest Neighbor function.  The following was taken from <https://daviddalpiaz.github.io/r4sl/knn-class.html>.
+
+```{r}
+#  Get a range of values to try.  Note, iris has 150 observations
+#  so 80% of those would be 120.  So letting k go to 100 is pretty big.
+
+k_to_try = 1:100
+
+#  Make a vector to store our error values
+err_k = vector("double", length(k_to_try))
+
+#  Make a helper function to calculate the error associated with a
+#  prediction.
+
+calc_class_err = function(actual, predicted) {
+  mean(actual != predicted)
+}
+
+for (i in seq_along(k_to_try)) {
+  pred = knn(train = iris_train, 
+             test  = iris_test, 
+             cl    = iris_test_predictions, 
+             k     = k_to_try[i])
+  err_k[i] = calc_class_err(iris_test_predictions, pred)
+}
+
+explore_k <- tibble(
+  k = k_to_try,
+  error_val = err_k
+)
+
+# Plot error vs choice of k
+ggplot(explore_k, aes(x = k, y = error_val)) +
+  geom_line(col = "dodgerblue") +
+  geom_hline(h = min(error_val), color = "darkorange") +
+  labs(title = "Visualizing the Prediction Error",
+       subtitle = "How does changing k, the number of nearest neighbors, impact error for our iris data set?", 
+       x = "k, number of neighbors", 
+       y = "classification error")
+```
+
+
+##  How to deal with categorical variable values
+
+When we have categorical variables, we will essentially need to convert those to binary values of 0 and 1.  This is not too bad when a categorical variable has only two possible values, but it gets a bit more complicated when there are more than two possible values.
+
+It is important to note that we'll need to make sure that our revised categorical variables are of type integer rather than factor!!
+
+For this, we'll need a new data set.  Let's try another you've seen before, the Palmer Penguins of Test 1.
+
+```{r}
+penguins <-read.csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/inst/extdata/penguins.csv")
+
+str(penguins)
+```
+
+Before we start working with it, let's remove any rows with NA's
+
+```{r}
+
+```
+
+We'll also need to normalize our bill_length_mm, bill_depth_mm, flipper_length_mm, and body_mass_g.  Note, Dr. McNelis did not mention year, as it's more of a categorical variable and we'll handle that in a moment
