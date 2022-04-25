@@ -1,0 +1,296 @@
+---
+title: "Bike Sharing"
+author: "Graham Swain"
+date: "4/21/2022"
+output: html_document
+---
+
+## 1 - Wrangle Bikes
+
+#### 2. [1 point] Unzip the file and then import the day.csv file and give the data frame the name bikes.
+
+```{r 1-2, results = "hide", message = FALSE}
+library(tidyverse)
+library(readr)
+library(modelr)
+day <- read_csv("./day.csv")
+```
+  
+#### 3. [3 points] The temperature, “feels like” temperature, humidity, and windspeed were all normalized (so that they were between the values of 0 and 1). You are to create new versions these variables so they correspond to their original recorded values by multiplying the existing values by their maximum values described on the UCI Repository. Please call these variables `temp_orig`, `feel_temp_orig`, `hum_orig`, `windspeed_orig`.
+
+```{r 1-3}
+day <- (day %>%
+          mutate(temp_orig = temp * 39,
+                 feel_temp_orig = atemp * 50,
+                 hum_orig = hum * 100,
+                 windspeed_org = windspeed * 67))
+head(day)
+```
+
+### 4. Categorical variables to factors. The categorical variables in this data have been coded with integer values and are read as integer values by R. You’ll convert them to non-numeric values as factors (categorical variables that have an associated ordering) with the following:
+
+#### a) [3 points] Convert the `weathersit` variable to be a factor with the values “clear”, “mist”, “light precip”, and “heavy precip”, based on the variable definitions. This factor should have the ordering “clear”, “mist”, “light precip”, “heavy precip”. 
+
+```{r 1-4a}
+day$weathersit <- factor(day$weathersit, 
+                         levels = c(1, 2, 3, 4), 
+                         labels = c('clear', 'mist', 'light precip', 'heavy precip'))
+head(day)
+```
+
+#### b) [2 points] Convert the workingday variable to be a factor with the values “work day” and “weekend/holiday”, and the levels “work day”, “weekend/holiday”.
+
+```{r 1-4b}
+day$workingday <- factor(day$workingday, 
+                         levels = c(1, 0), 
+                         labels = c('work day', 'weekend/holiday'))
+head(day)
+```
+
+#### c) [2 points] Convert the yr variable to be a factor with the values 2011 and 2012, and the levels 2011, 2012.
+
+```{r 1-4c}
+day$yr <- factor(day$yr,
+                 levels = 0:1,
+                 labels = c('2011', '2012'))
+head(day)
+```
+
+### 5. Working with time. Although we have the variable dteday which holds the date, it’s considered a character string rather than a date.
+
+#### a) [3 points] Convert the `dteday` to be recognized as dates by R.
+
+```{r 1-5a}
+# dteday is already recognized as a date.
+head(day)
+```
+
+#### b) [3 points] Use the values of `dteday` to create a new variable, `days`, that is the number of days since January 1, 2011. Note that you can subtract two dates. Keep in mind that the value stored in `days` should be stored as a number.
+
+```{r 1-5b}
+day <- (day %>%
+           mutate(days = as.numeric(day$dteday - as.Date("11-01-01", "%y-%m-%d"))))
+head(day)
+```
+
+## 2 - Models Relating Bike Rentals and Temperature
+Now you’ll investigate different models predicting relationships between the number of rentals (`cnt`) and
+the temperature (`temp_orig`).
+
+### 1) [2 points] Recreate the following image using your revised bikes data. Be careful to recreate the title, subtitle, and axes labels too (look up labs).
+
+```{r 2-1}
+ggplot(day) +
+  geom_point(aes(x = temp_orig, y = cnt, col = temp)) +
+  labs(x = 'Bike rentals',
+       y = 'Temperature in Celcius', 
+       title = 'Bike Rentals in DC in 2011 and 2012',
+       subtitle = 'Warmer weather leads to more rentals')
+```
+
+### 2) **Linear versus Quadratic Models**
+
+#### a) [1 point] Make a new data frame called bt (for bike temp) that contains the `temp_orig` and `cnt` variables from your modified bikes data frame.
+
+```{r 2-2a}
+bt <- data.frame(day['temp_orig'], day['cnt'])
+head(bt)
+```
+
+#### b) [3 points] Make two models, one linear and one quadratic, where the number of rentals, `cnt`, is the dependent (response) variable and the original temperature in Celsius, `temp_orig`, is the independent (predictor) variable. Save these with different names.
+
+```{r 2-2b}
+# Linear
+line_day <- lm(cnt ~ temp_orig, data = bt)
+line_coe <- coefficients(line_day)
+
+# Quadratic
+bt2 <- (bt %>%
+          mutate(tsqrt = temp_orig ** 2))
+quad_day <- model_matrix(cnt ~ temp_orig + tsqrt, data = bt2)
+pred <- lm(cnt ~ temp_orig + tsqrt, data = bt2)
+quad_day <- quad_day %>% 
+              add_predictions(pred)
+```
+
+#### c) [5 points] Make a `grid` data frame with values of `temp_orig` (cut into 20 evenly spaced values) and separately add the predictions from both models to this data frame. NOTE: Do not use `gather_predictions` here, as Dr. McNelis wants the model predictions to be in two different columns. The predictions from the linear model should be labeled “`linpred`” and those from the quadratic model labelled as “`quadpred`”. Note, the `add_predictions` function allows you to specify the name of variable containing the predictions.
+
+```{r 2-2c}
+temp_grid <- (bt %>% 
+                data_grid(temp_orig = seq_range(temp_orig, 20)))
+
+temp_grid <- (temp_grid %>%
+                add_predictions(line_day, var = 'linpred'))
+
+temp_grid <- (temp_grid %>%
+                mutate(tsqrt = temp_orig ^ 2) %>%
+                add_predictions(pred, var = 'quadpred') %>%
+                select(-tsqrt))
+temp_grid
+```
+
+#### d) [4 points] Make a plot that includes a scatter plot (as above) of `temp_orig` versus `cnt` and add curves for your linear and quadratic models from your grid data frame. Have a nice title, subtitle, and axes labels on your graph.
+
+```{r 2-2d}
+ggplot(day, aes(x = temp_orig, y = cnt, col = temp)) +
+  geom_point(alpha = .5) +
+  geom_line(data = temp_grid, aes(x = temp_orig, y = quadpred), color = "red") +
+  geom_line(data = temp_grid, aes(x = temp_orig, y = linpred), color = 'blue') +
+  labs(x = 'Temperature in Celcius',
+       y = 'Bike rentals', 
+       title = "Comparing Models",
+       subtitle = "Blue is linear and red is quadratic.") 
+```
+
+#### e) [5 points] Add the residuals from the two models to your bt data frame, then create a residual plot broken out by model. Consider adding the nice break/horizontal line at 0 to make that value clear. Again, include a nice title, subtitle, and axes labels on your graphs.
+
+```{r 2-2e}
+bt <- (bt %>% 
+         add_residuals(line_day, var = 'line') %>%
+         mutate(tsqrt = temp_orig ^ 2) %>%
+         add_residuals(pred, var = 'quad') %>%
+         select(-tsqrt))
+bt_long <- (bt %>%
+         pivot_longer(cols = c('line', 'quad'), 
+                      names_to = 'model', 
+                      values_to = 'resids'))
+bt_long
+
+ggplot(bt_long) +
+  geom_point(aes(x = temp_orig, y = resids, col = model))  +
+  geom_ref_line(h = 0) +
+  facet_grid(~model) +
+  labs(x = 'Temperature in Celcius',
+       y = 'Residual', 
+       title = "Residuals of the linear and quadratic models",
+       subtitle = "Blue is linear and red is quadratic.") +
+  theme(legend.position = 'none')
+```
+
+#### f) [5 points] Based on what you can see that your models capture and what they do not capture, explain if one model is better than another or if they are equally good (or bad). Be very thorough in your explanation and make references to your visual representations of the curves and their residuals in your argument.
+
+Overall the quadratic model seems like it represents the data better. The amount of rentals flattens out and decreases a little after 20 degrees, the linear model does not capture that at all. The linear model's residuals also creates a pretty defined quadratic curve, whereas the quadratic model's residuals are distributed better.
+
+### 3) Rentals Related to Temperature and Year
+
+#### a) [1 point] Make a new data frame called bty (for bike temp year) that contains the `temp_orig`, `yr`, and `cnt` variables from your modified bikes data frame.
+
+```{r 2-3a}
+bty <- data.frame(day['temp_orig'], day['yr'], day['cnt'])
+head(bty)
+```
+
+#### b) [4 points] Consider the model you determined was best in problem 2f. You are to create TWO new models, one where you **add** the year to the best model formula, and one where you include interactions with the year in the model formula. Call these models `bty_mod1` and `bty_mod2`.
+
+```{r 2-3b}
+bty_mod1 <- lm(cnt ~ (temp_orig + I(temp_orig ^ 2)) + yr, data = bty)
+bty_mod2 <- lm(cnt ~ (temp_orig + I(temp_orig ^ 2)) * yr, data = bty)
+```
+
+#### c) [3 points] Make a grid data frame with values of `temp_orig` (cut into 30 evenly spaced values) and `yr` and now add the predictions to grid using `gather_predictions`.
+
+```{r 2-3c}
+bty_grid <- data_grid(bty, temp_orig = seq_range(temp_orig, 30), yr)
+
+bty_grid <- (bty_grid %>%
+               gather_predictions(bty_mod1, bty_mod2))
+```
+
+#### d) [4 points] Make a plot that includes a plot of the two curves using `temp_orig` as the *x*, the predictions as the *y*, and `yr` to determine the color of the line. Add to that plot, a scatter plot with `temp_orig` as *x*, `cnt` as the *y*, and `yr` to determine the color, and break these out by both year and model. Make sure that your curves are clearly visible in your graphs. Have a nice title, subtitle, and axes labels on your graph.
+
+```{r 2-3d}
+ggplot(bty_grid) +
+  geom_point(data = day, aes(x = temp_orig, y = cnt, color = yr), alpha = 0.15) +
+  geom_line(aes(x = temp_orig, y = pred, color = yr)) +
+  facet_wrap(~yr + model) +
+  labs(x = 'Temperature in Celcius',
+       y = 'Bike rentals', 
+       title = "Bike rentals in DC, comparing models and year")
+```
+
+#### e) [5 points] Add the residuals from the two models to your bty data frame, then create a residual plot broken out by model and year with temperature as the *x*. Consider adding the nice break/horizontal line at 0 to make that value clear. Again, include a nice title, subtitle, and axes labels on your graphs.
+
+```{r 2-3e}
+bty <- (bty %>% 
+          gather_residuals(bty_mod1, bty_mod2))
+
+ggplot(bty) +
+  geom_point(aes(x = temp_orig, y = resid, color = yr), alpha = 0.5)  +
+  geom_ref_line(h = 0) +
+  facet_wrap(~yr + model) +
+  labs(x = 'Temperature in Celcius',
+       y = 'Residual', 
+       title = "Residuals of the update models seperated by year and model") +
+  theme(legend.position = 'none')
+```
+
+#### f) [5 points] Based on what you can see that your models capture and what they do not capture, explain if one model is better than another or if they are equally good (or bad). Be very thorough in your explanation and make references to your visual representations of the curves and their residuals in your argument.
+
+None of them seem amazing, but `bty_mod2` does appear to be better. I think 2012 shows it better. The residuals for `bty_mod1` have a slight curve, `bty_mod2` is more uniform. The curve also looks like a better fit in 2012. Both the curves and the residuals look pretty similar in 2011.
+
+## 3 - Models Relating Bike Rentals and Time
+Now you’ll investigate different models predicting relationships between the number of rentals (cnt) and
+time, in terms of the number of days since January 1, 2011 (days).
+
+### 3.1 - Polynomial Models
+#### 1) [2 points] Recreate the following image using your revised bikes data. Be careful to recreate the title, subtitle, and axes labels too (look up labs).
+
+```{r 3.1-1}
+ggplot(day) +
+  geom_point(aes(x = days, y = cnt, col = temp_orig)) +
+  labs(x = 'Days since January 1, 2011',
+       y = 'Bike rentrals',
+       title = 'Bike Rentals in CD, 2011 and 2012',
+       subtitle = 'Rentals trends over time')
+```
+
+#### 2) [1 point] Make a new data frame called `bd` (for bike days) that contains the `days` and `cnt` variables from your modified bikes data frame.
+
+```{r 3.1-2}
+bd <- data.frame(day['days'], day['cnt'])
+```
+
+#### 3) [7 points] Make a function called `fit_order_n` that takes an input of an integer *n* and returns a scatter plot of our data (like that in problem 1) with our *n^th^* order polynomial plotted along with the data. Make sure that the graph includes a **TITLE** that indicates the order of the polynomial (hint: check out help on the `paste` function).
+
+```{r 3.1-3}
+fit_order_n <- function(n) {
+  fit <- lm(cnt ~ poly(days, degree = n), data = bd)
+  p_grid <- data_grid(bd, days)
+  p_grid <- (bd %>% 
+               gather_predictions(fit))
+  
+  ggplot(p_grid) +
+    geom_point(aes(x = days, y = cnt), alpha = 0.2) + 
+    geom_line(aes(x = days, y = pred), col = 'red')  +
+    labs(x = 'Days since January 1, 2011',
+         y = 'Bike rentrals',
+         title = 'Estimating Bike Rentals in DC',
+         subtitle = paste('using ', n, 
+                          ifelse(n == 1, 'st', 
+                                 ifelse(n == 2, 'nd', 
+                                        ifelse(n == 3, 'rd', 'th'))), 
+                          ' order polynomial', sep = ''))
+}
+```
+
+#### 4) [5 points] Use your function to help you determine the smallest value of n that seems to provide a good “fit” to our data. In your comments or in your markdown portion, be sure to add your comment about the best value of n you found.
+
+```{r 3.1-4}
+# I couldn't get a for loop to work
+fit_order_n(1)
+fit_order_n(2)
+fit_order_n(3)
+fit_order_n(4)
+fit_order_n(5)
+fit_order_n(6)
+fit_order_n(7)
+fit_order_n(8)
+fit_order_n(9)
+fit_order_n(10)
+```
+
+Using a 4th order polynomial seems to be the minimum that fits our data, but using a 6th order polynomial seems to be a substainal improvement over 4th and 5th, and then more or less equal to higher order polynomials.
+
+### 3.2 - Sinusoidal Models
+
+#### 1) 

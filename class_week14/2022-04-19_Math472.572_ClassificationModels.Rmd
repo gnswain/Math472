@@ -44,7 +44,8 @@ set.seed(20220419)
 #  from our data set as the training observations.  Remember, we want
 #  this to account for roughly 80% of our data.
 
-
+sample_rows <- sample(1:nrow(iris), ceiling(.80 * nrow(iris)), replace = FALSE)
+sample_rows
 ```
 
 Before we go further, we'll take into consideration the fact that the Linear Discriminant Analysis method has a few requirements:
@@ -58,14 +59,40 @@ Before we go further, we'll take into consideration the fact that the Linear Dis
 #  use the drop_na() function such as iris <- iris %>% drop_na()
 iris <- na.omit(iris)
 
+# Checking for outliers
+ggplot(iris) + geom_boxplot(aes(x = Sepal.Length))
+ggplot(iris) + geom_boxplot(aes(x = Sepal.Width))
+ggplot(iris) + geom_boxplot(aes(x = Petal.Length))
+ggplot(iris) + geom_boxplot(aes(x = Petal.Width))
+
+# Looks like there are outliers in Sepal.Width. We will remove them.
+# Solid dots are mild outliers, which means there are more than 1.5 IQR's from Q3
+
+(SWquartiles <- quantile(iris$Sepal.Width))
+Q3 <- SWquartiles[[4]]
+Q1 <- SWquartiles[[2]]
+swIQR <- SWquartiles[[4]] - SWquartiles[[2]] # Q3 - Q1
+
+iris <- iris %>% filter(Sepal.Width >= Q1 - 1.5 * swIQR & Sepal.Width <= Q3 + 1.5 * swIQR)
+
+# Since we removed some values from iris, we need to recalculate our sample rows
+sample_rows <- sample(1:nrow(iris), ceiling(.80 * nrow(iris)), replace = FALSE)
+
 #  Now let's create a z-score function again, that takes 
 
+calc_z_score <- function(x) {
+  (x - mean(x)) / sd(x)
+}
 
 #  And now we can apply this to all but the last (fifth) column of iris
 #  and call it n_iris
+iris[1:4] <- iris %>% dplyr::select(1:4) %>% lapply(calc_z_score)
+head(iris)
 
 
-#  And check that our mean is zero and standard deviation is zero for each
+#  And check that our mean is zero and standard deviation is one for each
+lapply(iris[1:4], mean)
+lapply(iris[1:4], sd)
 
 ```
 
@@ -73,6 +100,9 @@ Now that this is done, we can split this normalized iris data frame up into our 
 
 ```{r}
 #  Define iris_train and iris_test.  Can you do this using filter?
+# We had sample_rows which lists the rows to keep for the training set.
+iris_train <- iris[sample_rows,]
+iris_test <- iris[-sample_rows,]
 
 #  What if you wanted to use the dfname[ , ] notation?
 
@@ -81,15 +111,13 @@ Now that this is done, we can split this normalized iris data frame up into our 
 Now we're ready to fit our Linear Discriminant Analysis model.  But this is in a special library that we must load first.  It's in the MASS package.
 
 ```{r}
-install.packages("MASS")
 library(MASS)
 
 #  Now get the model.  We'll use the formula input option, i.e. we'll 
 #  indicate ResponseVar ~ PredVar1 + PredVar2 + .., or more simply
 #  ResponseVar ~ . where the ~. means "all other variables"
 
-model <- lda(formual = Species~., 
-             data=iris_train)
+model <- lda(formula = Species ~ . , data = iris_train)
 model
 ```
 
@@ -101,7 +129,7 @@ predicted <- predict(model, iris_test[-5])
 predicted
 
 #  And we can get an idea of what proportion our model correctly classified
-mean(predicted$class==iris_test$Species)
+mean(predicted$class == iris_test$Species)
 ```
 
 We can also visualize what the LD1 and LD2 represent with the following code, taken from <https://www.statology.org/linear-discriminant-analysis-in-r/>
@@ -130,9 +158,16 @@ As with our LDA model, we'll want to normalize our numerical values.  We've alre
 
 ```{r}
 # Take the Species column out of the training set and save it as iris_train_response
+iris_train_response <- iris_train %>% dplyr::select(Species)
+
+# Brayan (that fucking nerd) caught that MASS has aselect function that overrode the one in dplyr
+
+# Remove the fifth column from iris_train
+iris_train <- iris_train[-5]
 
 #  Do the same for the testing set ...
-
+iris_test_response <- iris_test %>% dplyr::select(Species)
+iris_test <- iris_test[-5]
 
 
 ```
@@ -140,7 +175,6 @@ As with our LDA model, we'll want to normalize our numerical values.  We've alre
 We'll need to use another package to get access to (one of) the k-Nearest Neighbor functions.  It's the "class" package.
 
 ```{r}
-install.packages("class")
 library(class)
 ```
 
@@ -150,9 +184,9 @@ Now we're ready to try out our KNN function.  Note, this one is designed to take
 #  Now we'll use our k-Nearest Neighbor function
 
 iris_test_predictions <- knn(train = iris_train,
-           test = iris_test,
-           cl = iris_train_response,
-           k=13)
+                             test = iris_test,
+                             cl = iris_train_response[,1],
+                             k = 13)
 
 ```
 
@@ -160,7 +194,7 @@ iris_test_predictions <- knn(train = iris_train,
 ```{r}
 #  We can see the predictions for each observation in our test set and
 #  compare them to the correct answer with a confusion matrix (tab)
-tab <- table(iris_test_predictions,iris_test_response)
+tab <- table(iris_test_predictions, iris_test_response[,1])
 tab
 
 #  In order to quantify how well our model did, we'll calculate the 
@@ -195,9 +229,9 @@ calc_class_err = function(actual, predicted) {
 for (i in seq_along(k_to_try)) {
   pred = knn(train = iris_train, 
              test  = iris_test, 
-             cl    = iris_test_predictions, 
+             cl    = iris_train_response$Species, 
              k     = k_to_try[i])
-  err_k[i] = calc_class_err(iris_test_predictions, pred)
+  err_k[i] = calc_class_err(iris_test_response$Species, pred)
 }
 
 explore_k <- tibble(
@@ -208,7 +242,7 @@ explore_k <- tibble(
 # Plot error vs choice of k
 ggplot(explore_k, aes(x = k, y = error_val)) +
   geom_line(col = "dodgerblue") +
-  geom_hline(h = min(error_val), color = "darkorange") +
+  geom_hline(aes(yintercept = min(error_val)), color = "darkorange") +
   labs(title = "Visualizing the Prediction Error",
        subtitle = "How does changing k, the number of nearest neighbors, impact error for our iris data set?", 
        x = "k, number of neighbors", 
@@ -233,7 +267,106 @@ str(penguins)
 Before we start working with it, let's remove any rows with NA's
 
 ```{r}
-
+peng <- na.omit(penguins)
+peng %>% group_by(sex) %>% summarise(count = n())
 ```
 
 We'll also need to normalize our bill_length_mm, bill_depth_mm, flipper_length_mm, and body_mass_g.  Note, Dr. McNelis did not mention year, as it's more of a categorical variable and we'll handle that in a moment
+
+```{r}
+peng$bill_length_mm <- calc_z_score(peng$bill_length_mm)
+peng$bill_depth_mm <- calc_z_score(peng$bill_depth_mm)
+peng$flipper_length_mm <- calc_z_score(peng$flipper_length_mm)
+peng$body_mass_g <- calc_z_score(peng$body_mass_g)
+```
+
+We decided that our response variable will be species.
+So we will need to make it a factor. It is currently a character string.
+
+```{r}
+# Make species a factor:
+peng$species <- factor(peng$species, levels = c('Adelie', 'Chinstrap', 'Gentoo'), labels = c('Adelie', 'Chinstrap', 'Gentoo'))
+```
+
+Next easiest step is to change the categorical variables that have only two values to binary values of 0 and 1. The 'sex' variable meets this criteria.
+
+```{r}
+peng <- peng %>% mutate(sex = ifelse(sex == 'female', 1, 0),
+                        sex = as.integer(sex))
+
+str(peng)
+```
+
+Let's take the islands next: One method, make three new variables: Torg, Bisc, Dream.
+
+```{r}
+peng <- peng %>% mutate(Torg = as.integer(ifelse(island == 'Torgersen', 1, 0)),
+                        Bisc = as.integer(ifelse(island == 'Biscoe', 1, 0)),
+                        Dream = as.integer(ifelse(island == 'Dream', 1, 0)))
+
+head(peng)
+```
+
+Need to delete the island variable.
+
+```{r}
+peng <- peng %>% dplyr::select(-island)
+```
+
+Now for years:
+
+```{r}
+peng <- peng %>% mutate(yr2007 = as.integer(ifelse(year == 2007, 1, 0)),
+                        yr2008 = as.integer(ifelse(year == 2008, 1, 0)),
+                        yr2009 = as.integer(ifelse(year == 2009, 1, 0)))
+
+head(peng)
+
+peng <- peng %>% dplyr::select(-year)
+```
+
+Create model.
+
+```{r}
+sample_rows <- sample(nrow(peng), size = ceiling(0.9 * nrow(peng)), replace = FALSE)
+
+peng_train <- peng[sample_rows,]
+peng_test <- peng[-sample_rows,]
+
+peng_train_species <- peng_train[[1]]
+peng_test_species <- peng_test[[1]]
+
+# Remove species form peng_train and peng_test
+peng_train <- dplyr::select(peng_train, -species)
+peng_test <- dplyr::select(peng_test, -species)
+
+pred <- knn(train = peng_train,
+            test = peng_test,
+            cl = peng_train_species,
+            k = 13)
+pred
+
+tab <- table(pred, peng_test_species)
+tab
+
+accuracy <- function(x) { sum(diag(x) / (sum(rowSums(x)))) * 100 }
+accuracy(tab)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
