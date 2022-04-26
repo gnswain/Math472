@@ -133,7 +133,7 @@ temp_grid
 
 ```{r 2-2d}
 ggplot(day, aes(x = temp_orig, y = cnt, col = temp)) +
-  geom_point(alpha = .5) +
+  geom_point(alpha = .3) +
   geom_line(data = temp_grid, aes(x = temp_orig, y = quadpred), color = "red") +
   geom_line(data = temp_grid, aes(x = temp_orig, y = linpred), color = 'blue') +
   labs(x = 'Temperature in Celcius',
@@ -240,7 +240,7 @@ ggplot(day) +
   geom_point(aes(x = days, y = cnt, col = temp_orig)) +
   labs(x = 'Days since January 1, 2011',
        y = 'Bike rentrals',
-       title = 'Bike Rentals in CD, 2011 and 2012',
+       title = 'Bike Rentals in DC, 2011 and 2012',
        subtitle = 'Rentals trends over time')
 ```
 
@@ -289,8 +289,91 @@ fit_order_n(9)
 fit_order_n(10)
 ```
 
-Using a 4th order polynomial seems to be the minimum that fits our data, but using a 6th order polynomial seems to be a substainal improvement over 4th and 5th, and then more or less equal to higher order polynomials.
+Using a 4th order polynomial seems to be the minimum that has the same shape as the data data, but using a 6th order polynomial seems to be a substantial improvement over 4th and 5th, and then more or less equal to higher order polynomials.
 
 ### 3.2 - Sinusoidal Models
 
 #### 1) 
+
+```{r 3.2-1}
+B = 2 * pi / 365.25
+mod3 <- lm(cnt ~ sin(B * days) + cos(B * days), data = day)
+```
+
+#### 2) [2 points] Use the coefficients from the model above to determine the values of the phase shift *φ*, the amplitude *A*, and the midline, *k*. Indicate how you found these. Make sure you use the most precise value of the model coefficients that R stores.
+
+```{r 3.2-2}
+coe <- coefficients(mod3)
+
+phi <- atan(coe[[3]] / coe[[2]])
+A <- coe[[2]] / cos(phi)
+k = coe[[1]]
+```
+
+#### 3) [4 points] Make a `grid` data frame with values of `days`, then use mutate to add a new column to grid called “sinepred” whose values are the values of *A sin(B ∗ days + φ) + k*.
+
+```{r 3.2-3}
+sine_grid <- (day %>% 
+                data_grid(days) %>%
+                mutate(sinepred = A * sin(B * days + phi) + k))
+```
+
+#### 4) [4 points] Make a plot that includes a plot of the scatter plot of our bike rentals over time and add the curve for our sinusoidal model predictions (in grid) to this plot. Have a nice title, subtitle, and axes labels on your graph.
+
+```{r 3.2-4}
+ggplot(day) +
+  geom_point(aes(x = days, y = cnt, col = temp_orig), alpha = 0.3) +
+  geom_line(data = sine_grid, aes(x = days, y = sinepred), col = 'red') +
+  labs(x = 'Days since January 1, 2011',
+       y = 'Bike rentrals',
+       title = 'Estimating Bike Rentals in DC',
+       subtitle = 'Using a sinusoidal model')
+```
+
+#### 5) [3 points] Make a copy of your bd data frame called bd2 and add the residuals associated with sinusoidal model as a new variable in this data frame.
+
+```{r 3.2-5}
+bd2 <- (bd %>%
+          gather_residuals(mod3))
+```
+
+#### 6) [4 points] Create a residual plot associated with this sinusoidal model. Again, include a nice title, subtitle, and axes labels on your graphs.
+
+```{r 3.2-6}
+ggplot(bd2) +
+  geom_point(aes(x = days, y = resid), alpha = 0.5)  +
+  geom_ref_line(h = 0) +
+  labs(x = 'Days since January 01, 2011',
+       y = 'Residual', 
+       title = "Residuals of the update models predicting based off days") +
+  theme(legend.position = 'none')
+```
+
+## 4 - Other Key Factors
+
+I think the next best predictors to use could be `season`, `mnth`, `dteday`, and `weathersit`. I made a couple tibbles below to show the average for each of them.  `season` would not be the best predictor, especially since `mnth` holds practically the same information and is more specific.  `dteday` and `mnth` would be likely be similar to the model we made with `days`, so making a model using them as a predictor could be redundant.
+
+I originally thought `workingday` would be a good predictor. I was expecting none working days to have a lower average, but working days actually end up having about 200 more bike rentals per day. In retrospect that makes sense, as people use them to commute. Either way, I don't think there is a significant enough difference to really be a good predictor.
+
+
+```{r}
+ggplot(day) +
+  geom_point(aes(x = temp_orig, y = cnt, col = weathersit))
+
+day %>%
+  group_by(mnth) %>%
+  summarise(avg = mean(cnt))
+
+day %>%
+  group_by(season) %>%
+  summarise(avg = mean(cnt))
+
+day %>%
+  group_by(weathersit) %>%
+  summarise(avg = mean(cnt))
+
+day %>%
+  group_by(workingday) %>%
+  summarise(avg = mean(cnt))
+```
+
