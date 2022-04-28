@@ -1,0 +1,280 @@
+---
+title: "2022-04-26  Math 472/572 Statistical Inference"
+author: "Erin McNelis"
+date: "4/26/2022"
+output: html_document
+---
+
+# Statistical Inference 
+
+Thus far in our course we've discussed tidying data (wrangling), scraping data (wrangling), transforming data (exploring), graphing data (exploring), writing programs (programming), making models and predictions from models (modeling), and how to express our findings using R and R markdown (communicating).  Dr. McNelis found a couple of other topics that may be of value to you in your current and future data science/exploratory data analysis projects: making inferences and quantifying the significance or reliability of those inferences.
+
+Though most inferences (confidence intervals, hypothesis tests) can be calculated and significance can be determined using numerical and statistical calculations you can look up in basic statistics texts or online, we can use our knowledge of programming in R and sampling to enhance this work, particularly if the data we're working with does not come from a normal distribution.
+
+# Confidence Intervals with Bootstrapping
+
+## A Review of Some Confidence Interval Concepts
+
+Recall that a **point estimate** of a population characteristic is a single number that is based on sample data and represents a plausible value of the characteristic.
+
+A statistic whose mean value is equal to the value of the population characteristic being estimated is said to be an **unbiased statistic**. A statistic that is not unbiased is said to be **biased**.
+
+*NOTE:  The mean of a single sample, $\bar{x}$, is an unbiased estimator of the population mean, $\mu$, but the standard deviation of a single sample, $s$, is NOT an unbiased estimator of $\sigma$.*
+
+A **confidence interval (CI)** for a population characteristic is an interval of plausible values for the characteristic.  It is constructed so that, with a chosen degree of confidence, the actual value of the population characteristic will be between the lower and upper endpoints of the interval.
+
+The **confidence level** associated with a confidence interval estimate is the success rate of the METHOD used to construct the interval.  (It is NOT confidence in a particular interval you obtain with a sample.)
+
+## Confidence Intervals for a Population Proportion from a Normal Sampling Distribution
+
+If (a) $\hat{p}$ is the sample proportion from a **simple random sample** (so the samples are independent and identically distributed (i.i.d.)), and (b) the sample size $n$ **is large*}** (i.e. $n \hat{p} \geq 10$ and $n (1 - \hat{p}) \geq 10$ ... think of this as the sample should contain at least 10 "successes" and at least 10 "failures" in it), then we can calucate the confidence interval for the population proportion (of successes), $p$, by
+
+
+\begin{eqnarray*}
+\left[\hat{p} - (z \text{ critical value }) \sqrt{\frac{\hat{p}(1 - \hat{p})}{n}} \right.&,  &\left. \; \hat{p} + (z \text{ critical value }) \sqrt{\frac{\hat{p}(1 - \hat{p})}{n}}\right]
+\end{eqnarray*}
+\centering{ or } 
+\begin{eqnarray*}
+\hat{p} & \pm & \underbrace{(z \text{ critical value }) \sqrt{\frac{\hat{p}(1 - \hat{p})}{n}}}_{\text{margin of error}}
+\end{eqnarray*}
+
+
+\noindent
+Note,  the **estimate of the standard deviation of a statistic**, here $SE = \displaystyle \sqrt{\frac{\hat{p}(1 - \hat{p})}{n}}$, is known as the **standard error**
+
+#  Example
+A poll conducted by SurveyUSA conducted in early April 2022 indicated that 57% of voters felt recreational use of marijuana should be legalized and 72% felt the medical use of marijuana should also be legal.  SurveyUSA randomly selected 2,500 North Carolina adults from April 6-10, of which 2,068 are registered to vote in the state.  For more, see <https://www.wcnc.com/article/news/politics/most-north-carolina-voters-support-legalization-of-marijuana-north-carolina/275-2b07e9da-782a-4a6d-bcef-1bfb3fac0c62>
+
+Let's find a confidence interval for the true proportion of NC residents that feel recreational use of marijuana should be legal.
+```{r}
+library(tidyverse)
+#  Our point estimate is, phat, the sample proportion of "successes" where a success will be considering that a respondent indicated they believe recreational marijuana should be legal.
+
+n_mj <- 2500
+phat <- 0.57
+
+#  Check assumptions:
+#  (a)  Was the sample independent?  Yes, as a random sample (based on description given in the article), observations would be independent and representative of the population.
+#  (b)  Was the sample large enough?
+print("Checking assumptions:")
+print("n*phat >= 10")
+n_mj * phat >= 10
+
+print("n*phat >= 10")
+n_mj * (1 - phat) >= 10
+
+#  Estimate the standard error for phat
+
+se <- sqrt(phat * (1 - phat) / n_mj )
+
+#  Suppose we want a 95% confidence interval (so alpha = 0.05.  Since we passed our requirements above, we can assume the sampling distribution is normal, and 95% of the data lies between - zcrit and + zcrit, or 97.5% of the data lies to the left of + zcrit where of:
+
+alpha <- 0.05
+zcrit <- qnorm(1 - alpha / 2)
+cat("The z-critical value for alpha is", alpha, "is", zcrit, "\n")
+
+#  Now calculate the confidence interval
+
+lower <- phat - zcrit * se
+upper <- phat + zcrit * se
+
+cat("The Confidence interval for p is (", lower, ",", upper, ")") 
+```
+
+Let's make a function for this:
+
+```{r}
+find_ci_p <- function(phat, n, alpha) {
+  #  Check assumptions:
+  #  (a)  Was the sample independent?  Yes, as a random sample (based on description given in the article), 
+  #  observations would be independent and representative of the population.
+  #  (b)  Was the sample large enough?
+  print("Checking assumptions:")
+  print("n*phat >= 10")
+  n * phat >= 10
+
+  print("n*phat >= 10")
+  n * (1 - phat) >= 10
+
+  if (n * phat < 10 | (n * (1 - phat) < 10)) {
+    stop('Your sample is too small or something, idk.')
+  }
+  #  Estimate the standard error for phat
+
+  se <- sqrt(phat * (1 - phat) / n )
+
+  #  Suppose we want a 95% confidence interval (so alpha = 0.05.  Since we passed our requirements
+  # above, we can assume the sampling distribution is normal, and 95% of the data lies between 
+  # - zcrit and + zcrit, or 97.5% of the data lies to the left of + zcrit where of:
+
+  
+  zcrit <- qnorm(1 - alpha / 2)
+  cat("The z-critical value for alpha is", alpha, "is", zcrit, "\n")
+
+  #  Now calculate the confidence interval
+
+  lower <- phat - zcrit * se
+  upper <- phat + zcrit * se
+
+  cat("The Confidence interval for p is (", lower, ",", upper, ")") 
+}
+```
+
+Let's test it out:
+
+```{r}
+find_ci_p(.72, 2500, .1)
+```
+
+
+
+##  Confidence Interval with Bootstrapping
+
+At times, we may want a confidence interval on a population parameter that we do not know the sampling distribution of, or the sampling distribution is not normal, or the sample is really small.  In these cases, we can use bootstrapping.  Essentially, bootstrapping is when we conduct a test by resampling, WITH REPLACEMENT, and finding a value of our sample statistic from each sample.  We do this a LARGE (often 10,000) times to approximate the distribution of the sampling statistic and to approximate how unusual a given sample statistic may be.
+
+Example:
+People providing an organ for donation sometimes seek the help of a special “medical consultant.” These consultants assist the patient in all aspects of the surgery, with the goal of reducing the possibility of complications during the medical procedure and recovery. Patients might choose a consultant based in part on the historical complication rate of the consultant’s clients. One consultant tried to attract patients by noting the average complication rate for liver donor surgeries in the US is about 10%, but her clients have only had 3 complications in the 62 liver donor surgeries she has facilitated. She claims this is strong evidence that her work meaningfully contributes to reducing complications (and therefore she should be hired!).
+
+We want to find if the low complication rate of $\hat{p} = 0.048 = \frac{3}{62}$ could have simply occurred by chance, if her complication rate does not differ from the US standard rate?
+
+```{r}
+#  Note that our normality conditions are not met here.
+
+#  Our point estimate is, phat, the sample proportion of "successes" where a success will be considering that a respondent indicated they believe recreational marijuana should be legal.
+
+n_consult <- 64
+(phat_consult <- 3 / 62)
+
+#  Check assumptions:
+#  (a)  Was the sample independent?  No, these were not random samples.  People chose to use a consultant, and they chose to use this particular consultant.
+#  (b)  Was the sample large enough?
+print("Checking assumptions:")
+print("n*phat >= 10")
+n_consult * phat_consult >= 10
+
+print("n*phat >= 10")
+n_consult * (1 - phat_consult) >= 10
+
+```
+So, what can we do?  We'll take many, many (10,000) samples from a population where 3 of the 62 values are successes, just like a sample.  We'll take a sample of size 62 (the number of patients the counselor has had) WITH REPLACEMENT from this population and determine the proportion of "successes" and record that as $\hat{p}_{sim_1}$, then we will do this repeatedly and record our $\hat{p}_{sim}$ results.
+
+```{r}
+#  Define our population with 
+sample_space <- c(rep(1, 3), rep(0, 59))  # 1 is a success, 0 is a failure
+
+phat_vals <- vector("double", length = 10000)
+
+for (i in 1:10000){
+  s <- sample(sample_space, 62, replace = TRUE)
+  phat_vals[i] <- sum(s) / length(s)
+}
+
+sampling_dist <- tibble( phat = phat_vals)
+
+#  Find a (100 - alpha)% confidence interval for p:
+alpha <- 0.05
+
+#  Find the left interval of our confidence interval, i.e. the value
+#  for which alpha/2 of our 10000 values fall
+lower <- quantile(sampling_dist$phat, alpha / 2)
+upper <- quantile(sampling_dist$phat, 1 - alpha / 2)
+
+ggplot(sampling_dist) +
+  geom_histogram(aes(x = phat), bins = 63) + 
+  geom_vline(xintercept = c(lower, upper), color = 'red') +
+  labs(title = "Sampling Distribution of phat",
+       subtitle = "Cancer Consultant Example, Confidence Interval")
+
+cat("The Confidence interval for p using bootstrapping is given by (", lower, ",", upper, ")") 
+```
+
+
+## Hypothesis Test on a Population Proportion, Sampling Distribution is Normal
+
+As with our confidence interval on a population proportion (the proportion of NC residents that believe marijuana should be legalized for recreational use), since our sampling distribution was assumed to be normal (we passed our two checks), we can use formulas to conduct a hypothesis test.
+
+
+
+
+## Hypothesis Test on a Population Proportion, Using Bootstrapping
+
+Back to our Medical Consultant Example:
+People providing an organ for donation sometimes seek the help of a special “medical consultant.” These consultants assist the patient in all aspects of the surgery, with the goal of reducing the possibility of complications during the medical procedure and recovery. Patients might choose a consultant based in part on the historical complication rate of the consultant’s clients. One consultant tried to attract patients by noting the average complication rate for liver donor surgeries in the US is about 10%, but her clients have only had 3 complications in the 62 liver donor surgeries she has facilitated. She claims this is strong evidence that her work meaningfully contributes to reducing complications (and therefore she should be hired!).
+
+We want to find if the low complication rate of $\hat{p} = 0.048 = \frac{3}{62}$ could have simply occurred by chance, if her complication rate does not differ from the US standard rate?.
+
+```{r}
+#  Define our population with 10% chance of success, 1
+sample_space <- c(1, rep(0, 9))  # 1 is a success, 0 is a failure
+
+phat_vals <- vector("double", length = 10000)
+
+for (i in 1:10000){
+  s <- sample(sample_space, 62, replace = TRUE)
+  phat_vals[i] <- sum(s) / length(s)
+}
+
+sampling_dist <- tibble( phat = phat_vals)
+
+ggplot(sampling_dist) + 
+  geom_histogram(aes(x = phat), bins = 63) + 
+  geom_vline(xintercept = phat_consult, color = 'red') +
+  labs(title = "Sampling Distribution of phat",
+       subtitle = "Cancer Consultant Example, Red line at Her Success Rate")
+
+pvalue <- sampling_dist %>% filter(phat < phat_consult) %>% summarize(left_tail_area = n() / 10000)
+
+cat("The probability of getting a proportion of success less than the consultants", phat_consult, "success rate if the population success rate is 10% is", pvalue[[1]])
+```
+Example:  A Survey USA poll conducted in Seattle, WA in May 2021 reports that of the 650 respondents (adults living in this area), 159 support proposals to defund police departments <https://www.surveyusa.com/client/PollReport.aspx?g=aee4e2ed-504a-4d1c-b24b-0a7e21ad11ad>.  (See also <https://openintro-ims.netlify.app/inference-one-prop.html#one-prop-null-boot>)
+
+Here, our sample statistic is the proportion of the population that "support proposals to defund police departments", or $\hat{p} = \frac{159}{650} \approx 0.2446$.
+
+A journalist writing a news story on the poll results wants to use the headline “More than 1 in 5 adults living in Seattle support proposals to defund police departments.” You caution the journalist that they should first conduct a hypothesis test to see if the poll data provide convincing evidence for this claim. Write the hypotheses for this test.
+
+
+```{r}
+library(dplyr)
+library(nycflights13)
+
+head(flights, 5)
+
+sm_flights <- sample_n(flights, 1000)
+ggplot(sm_flights) +
+  geom_histogram(aes(x = arr_delay))
+# not very normally distributed
+
+# Find a confidence interval with bootstrapping on mean delay time...
+# Our sample space is the vecor of values for arr_delay
+
+sample_space <- sm_flights %>% select(arr_delay) %>% na.omit()
+
+# Point estimate for the mean
+(xbar <- mean(sm_flights$arr_delay))
+
+# We will resample, from this sample, and take how many:
+(n <- nrow(sample_space))
+
+xbar_vec <- vector('double', length = 10000)
+
+for (i in 1:10000) {
+  s <- sample(sample_space$arr_delay, n, replace = TRUE)
+  xbar_vec[i] <- mean(s)
+}
+
+
+sample_means <- tibble(xbar = xbar_vec)
+
+alpha <- 0.01
+
+lower <- quantile(sample_means$xbar, alpha / 2)
+upper <- quantile(sample_means$xbar, 1 - alpha / 2)
+
+cat('The confidence interval for alpha = ', alpha, 'is (', lower, ',', upper, ')')
+
+# Plot the distribution of the sample means
+ggplot(sample_means) +
+  geom_histogram(aes(x = xbar), binwidth = 1) +
+  geom_vline(xintercept = c(lower, upper), color = "red")
+```
+
